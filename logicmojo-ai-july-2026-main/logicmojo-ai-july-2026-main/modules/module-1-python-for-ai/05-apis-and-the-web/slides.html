@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class 1.5 - APIs and the web</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="../../../assets/theme.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="deck-footer">GenAI and Agentic AI &middot; Module 1 &middot; Class 1.5</div>
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section class="title" data-background-gradient="linear-gradient(120deg, #1e3a8a 0%, #3730a3 55%, #312e81 100%)">
+      <span class="kicker">Module 1 &middot; Python for AI &middot; Class 1.5</span>
+      <h1>APIs and the web</h1>
+      <p class="lead">Talk to a service over the web, then make your first LLM call: locally and free, then hosted.</p>
+    </section>
+
+    <!-- 2. Recap and today -->
+    <section>
+      <h2><span class="eyebrow">Recap and today</span>You talk to an LLM today</h2>
+      <div class="body">
+        <p class="stmt">You can load and shape data. Today you reach out over the web and, for the first time, call a language model.</p>
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">First</div>
+            <ul class="tight">
+              <li>How a web request and response work</li>
+              <li>Calling an API with <code>requests</code></li>
+              <li>Reading JSON back</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Then</div>
+            <ul class="tight">
+              <li>A local LLM call with Ollama (free, your machine)</li>
+              <li>A hosted call with Groq (fast, free tier)</li>
+              <li>The API-key habit</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Request and response -->
+    <section>
+      <h2><span class="eyebrow">HTTP</span>Request in, response out</h2>
+      <div class="body top">
+        <div class="mermaid">
+flowchart LR
+  U["Your code"] -->|"request"| A["A service (API)"]
+  A -->|"response, usually JSON"| U
+        </div>
+        <div class="analogy">
+          <span class="label">Think of it as</span>
+          Ordering at a counter: you hand over a slip (the request), you get back a tray (the response).
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. REST + JSON -->
+    <section>
+      <h2><span class="eyebrow">HTTP</span>Endpoints and JSON</h2>
+      <div class="body">
+        <p class="stmt">A REST API is a set of named URLs (endpoints) you send requests to.</p>
+        <ul>
+          <li>The response usually comes back as <strong>JSON</strong>.</li>
+          <li>From previous classes, JSON is just a <strong>dict</strong> in text form, so you already know how to read it.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 5. requests.get -->
+    <section>
+      <h2><span class="eyebrow">requests</span>A GET request</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import requests
+
+resp = requests.get("https://api.example.com/facts")
+data = resp.json()      # JSON -> dict
+print(data["fact"])</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>requests.get(url)</code> fetches from an endpoint.</li>
+              <li><code>.json()</code> parses the response body into a dict.</li>
+              <li>Pull out the field you need by key.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Checking status -->
+    <section>
+      <h2><span class="eyebrow">requests</span>Always check the status</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">resp = requests.get(url)
+if resp.status_code == 200:
+    data = resp.json()
+else:
+    print("request failed:", resp.status_code)</code></pre>
+          </div>
+          <div>
+            <div class="callout">
+              <span class="label">Do not assume success</span>
+              A call can fail: a wrong URL, a service down, a bad key. <code>200</code> means OK. Check the status before you trust the body.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. requests.post -->
+    <section>
+      <h2><span class="eyebrow">requests</span>A POST with a JSON body</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">resp = requests.post(
+    "https://api.example.com/ask",
+    json={"question": "hello?"},
+)
+print(resp.json())</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>requests.post(url, json=...)</code> sends data in the request body.</li>
+              <li>This is the exact shape of an LLM call: a prompt goes in, a reply comes back.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Black-box anchor -->
+    <section>
+      <h2><span class="eyebrow">What an LLM is</span>An honest black box, for now</h2>
+      <div class="body">
+        <p class="lead">An LLM is a program trained on a very large amount of text that predicts plausible next text. Today we use it as a black box: text in, text out.</p>
+        <div class="callout">
+          <span class="label">A promise</span>
+          In Module 3 we open the box and see exactly how it works. For now, calling it is just another request and response.
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Ollama -->
+    <section>
+      <h2><span class="eyebrow">Local</span>Your first call, with Ollama</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import requests
+
+resp = requests.post(
+    "http://localhost:11434/api/generate",
+    json={"model": "llama3.2",
+          "prompt": "Say hello.",
+          "stream": False},
+)
+print(resp.json()["response"])</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Ollama runs a small model on <strong>your own machine</strong>.</li>
+              <li>No token cost, and your text never leaves your laptop.</li>
+              <li>Same request-and-response shape you just learned.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. It generates -->
+    <section>
+      <h2><span class="eyebrow">Mental model</span>It generates, it does not search</h2>
+      <div class="body">
+        <div class="callout">
+          <span class="label">Common misconception</span>
+          The model is not looking things up on the internet. It generates text from patterns it learned during training. That distinction matters later: giving it real documents to read is RAG, in Module 4.
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Groq -->
+    <section>
+      <h2><span class="eyebrow">Hosted</span>The same prompt, on Groq</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import os, requests
+
+resp = requests.post(
+    "https://api.groq.com/openai/v1/chat/completions",
+    headers={"Authorization": f"Bearer {os.environ['GROQ_API_KEY']}"},
+    json={"model": "llama-3.1-8b-instant",
+          "messages": [{"role": "user", "content": "Say hello."}]},
+)
+print(resp.json()["choices"][0]["message"]["content"])</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Groq runs bigger open models on someone else's hardware.</li>
+              <li>Faster than a laptop, with a free tier.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. API key habit -->
+    <section>
+      <h2><span class="eyebrow">Hosted</span>The API-key habit</h2>
+      <div class="body">
+        <p class="stmt">A hosted call needs a free key. Where the key goes matters.</p>
+        <div class="callout">
+          <span class="label">Never in the code</span>
+          Put the key in an environment variable and read it with <code>os.environ</code>. Never paste it into code and never commit it. Remember from 1.1: the repo keeps history, so a key pushed once stays in that history.
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Tiers -->
+    <section>
+      <h2><span class="eyebrow">Two ways to reach a model</span>Local and hosted</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Local (Ollama)</div>
+            <ul class="tight">
+              <li>Private: text stays on your machine</li>
+              <li>Free, no key</li>
+              <li>Limited by your hardware</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Hosted (Groq)</div>
+            <ul class="tight">
+              <li>Fast, bigger open models</li>
+              <li>Free tier, needs a key</li>
+              <li>Runs on someone else's hardware</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. FastAPI teaser -->
+    <section>
+      <h2><span class="eyebrow">A look ahead</span>Serving this later (shown, not built)</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">from fastapi import FastAPI
+from pydantic import BaseModel
+
+class Ask(BaseModel):
+    question: str
+
+app = FastAPI()
+
+@app.post("/ask")
+def ask(body: Ask):
+    return {"answer": run_model(body.question)}</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>This is how we will <strong>serve</strong> a model later, as an API of our own.</li>
+              <li>Notice the type hints from 1.2 defining the request shape.</li>
+              <li>We do not build it today; just plant the shape.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15. Wrap -->
+    <section>
+      <h2><span class="eyebrow">Wrap up</span>Your turn, and what is next</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Micro-assignment</div>
+            <ul class="tight">
+              <li>Parse a JSON response and check a status code.</li>
+              <li>Make a local (Ollama) and a hosted (Groq) call.</li>
+              <li>Details in the micro-assignment folder.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Module 1 milestone assignment and beyond</div>
+            <ul class="tight">
+              <li><strong>Milestone assignment</strong>: a tool that reads data, computes facts, asks an LLM, saves JSON.</li>
+              <li>Watch the <strong>math-intuition primer</strong> before class 2.2.</li>
+              <li>Next module: how models actually learn.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+      primaryColor: '#ffffff', primaryTextColor: '#172033', primaryBorderColor: '#2563eb',
+      lineColor: '#2563eb', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', fontSize: '16px' },
+    flowchart: { nodeSpacing: 45, rankSpacing: 55, htmlLabels: true } });
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', width: 1280, height: 720,
+    margin: 0, center: false, transition: 'slide', plugins: [ RevealHighlight, RevealNotes ]
+  }).then(function () {
+    if (window.mermaid) { mermaid.run(); }
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        { left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false } ], throwOnError: false });
+    }
+  });
+</script>
+</body>
+</html>

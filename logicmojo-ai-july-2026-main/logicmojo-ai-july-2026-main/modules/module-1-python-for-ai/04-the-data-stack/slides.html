@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class 1.4 - The data stack</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="../../../assets/theme.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="deck-footer">GenAI and Agentic AI &middot; Module 1 &middot; Class 1.4</div>
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section class="title" data-background-gradient="linear-gradient(120deg, #1e3a8a 0%, #3730a3 55%, #312e81 100%)">
+      <span class="kicker">Module 1 &middot; Python for AI &middot; Class 1.4</span>
+      <h1>The data stack</h1>
+      <p class="lead">The two libraries every AI dataset passes through: NumPy for numbers and vectors, Pandas for tables.</p>
+    </section>
+
+    <!-- 2. Recap and today -->
+    <section>
+      <h2><span class="eyebrow">Recap and today</span>The two libraries every dataset touches</h2>
+      <div class="body">
+        <p class="stmt">You can structure programs and read and write data. Today you meet the tools that hold and shape that data for AI, and the operations you will reach for daily.</p>
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">NumPy</div>
+            <ul class="tight">
+              <li>Fast, fixed-type arrays</li>
+              <li>Shape and reshape; index and slice</li>
+              <li>Masking, broadcasting, and axis math</li>
+              <li>The vector: the shape of all AI data</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Pandas</div>
+            <ul class="tight">
+              <li>Tables you drive with code</li>
+              <li>Select with labels and positions</li>
+              <li>Filter, derive, and handle missing data</li>
+              <li>Group, summarize, and sort</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Why NumPy -->
+    <section>
+      <h2><span class="eyebrow">NumPy &middot; 1 of 8</span>Why not just use a list?</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import numpy as np
+
+# a Python list can hold mixed, boxed objects
+box = [1, "two", 3.0]
+
+# a NumPy array is one fixed type, packed tightly
+arr = np.array([1, 2, 3])
+print(arr.dtype)   # int64
+print(arr * 2)     # [2 4 6]  (the whole array at once)</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>A list stores scattered Python objects; an array stores one <strong>fixed type</strong> in one contiguous block.</li>
+              <li>That layout lets NumPy run math in fast compiled loops, not slow Python ones.</li>
+              <li>Operations apply to the <strong>whole array at once</strong> (vectorization), so there is nothing to loop over by hand.</li>
+            </ul>
+            <div class="analogy"><span class="label">Think of it as</span>A list is a shelf of labeled boxes; an array is a ruler of identical, evenly spaced cells.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Creating arrays + dtype -->
+    <section>
+      <h2><span class="eyebrow">NumPy &middot; 2 of 8</span>Make arrays, and know their dtype</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">np.array([1, 2, 3])        # from a list
+np.arange(0, 10, 2)        # [0 2 4 6 8]  (start, stop, step)
+np.linspace(0, 1, 5)       # [0. 0.25 0.5 0.75 1.]
+np.zeros(3)                # [0. 0. 0.]
+np.ones((2, 3))            # a 2x3 grid of ones
+
+np.array([1, 2, 3]).dtype          # dtype('int64')
+np.array([1, 2, 3.0]).dtype        # dtype('float64')</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>arange</code> is <code>range</code> for arrays; <code>linspace(a, b, n)</code> gives <code>n</code> evenly spaced points including both ends.</li>
+              <li><code>zeros</code> and <code>ones</code> preallocate a grid of a given shape.</li>
+              <li>Every array has one <code>dtype</code> (<code>int64</code>, <code>float64</code>, ...). One float in the list promotes the whole array to float.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Shape and reshape -->
+    <section>
+      <h2><span class="eyebrow">NumPy &middot; 3 of 8</span>Shape: how the numbers are arranged</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">a = np.arange(6)        # [0 1 2 3 4 5]
+print(a.shape)          # (6,)     one dimension
+print(a.ndim)           # 1
+
+m = a.reshape(2, 3)     # 2 rows, 3 columns
+print(m.shape)          # (2, 3)
+print(m.ndim)           # 2
+
+a.reshape(-1, 2)        # -1 = "you work out this one" -> (3, 2)</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>.shape</code> is a tuple of sizes per dimension; <code>.ndim</code> is how many dimensions.</li>
+              <li>A 1D array is a <strong>vector</strong>; a 2D array is a <strong>matrix</strong>; more dimensions are <strong>tensors</strong>.</li>
+              <li><code>reshape</code> re-lays the same values into a new shape; the counts must match (6 = 2 &times; 3).</li>
+              <li><code>-1</code> means "infer this dimension from the rest".</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Indexing and slicing -->
+    <section>
+      <h2><span class="eyebrow">NumPy &middot; 4 of 8</span>Index and slice, in 1D and 2D</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">m = np.array([[10, 20, 30],
+              [40, 50, 60]])
+
+m[0, 2]     # 30           row 0, column 2
+m[1]        # [40 50 60]   the whole second row
+m[:, 0]     # [10 40]      the whole first column
+m[0, :2]    # [10 20]      row 0, first two columns</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Index a 2D array with <code>[row, column]</code>, not <code>[row][column]</code>.</li>
+              <li>A bare <code>:</code> means "all of this dimension", so <code>m[:, 0]</code> is every row's first column.</li>
+              <li>Slices use <code>start:stop</code> as in lists, and the stop is excluded.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">Rows then columns</span>
+              The first index walks down the rows, the second across the columns. Read <code>m[r, c]</code> as "row r, column c".
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Boolean masking -->
+    <section>
+      <h2><span class="eyebrow">NumPy &middot; 5 of 8</span>Boolean masking: select by condition</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">prices = np.array([40, 120, 250, 80, 15])
+
+mask = prices &gt; 100
+print(mask)            # [False  True  True False False]
+print(prices[mask])    # [120 250]   keep where True
+
+print((prices &gt; 100).sum())   # 2   True counts as 1
+
+prices[prices &lt; 50] = 0       # assign through a mask
+print(prices)                 # [  0 120 250  80   0]</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>A comparison on an array returns a same-shape array of <code>True</code>/<code>False</code>.</li>
+              <li>Indexing with that mask keeps only the <code>True</code> positions.</li>
+              <li>Because <code>True</code> is <code>1</code>, <code>mask.sum()</code> counts how many passed.</li>
+              <li>You can assign through a mask to change just the matching cells.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Vectorized ops and broadcasting -->
+    <section>
+      <h2><span class="eyebrow">NumPy &middot; 6 of 8</span>Vectorized math and broadcasting</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">a = np.array([1, 2, 3])
+print(a + 10)      # [11 12 13]   scalar stretched to each
+print(a * a)       # [1 4 9]      elementwise
+
+# broadcasting: a 1D row added to every row of a matrix
+matrix = np.array([[1, 2, 3],
+                   [4, 5, 6]])
+bias = np.array([10, 20, 30])
+print(matrix + bias)
+# [[11 22 33]
+#  [14 25 36]]</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Arithmetic between arrays happens <strong>elementwise</strong>, with no loop.</li>
+              <li><strong>Broadcasting</strong>: when shapes differ, NumPy stretches the smaller one to fit, if the dimensions line up.</li>
+              <li>Here the length-3 <code>bias</code> is applied to each row of the 2&times;3 matrix.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">Why it matters</span>
+              Adding a bias vector across a batch of rows is exactly what a neural network layer does. You are seeing the core operation now.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Aggregations and axis -->
+    <section>
+      <h2><span class="eyebrow">NumPy &middot; 7 of 8</span>Aggregations, and the axis argument</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">scores = np.array([[90, 80],    # student 1: math, english
+                   [70, 60],    # student 2
+                   [85, 95]])   # student 3
+
+scores.mean()          # 80.0            over everything
+scores.sum(axis=0)     # [245 235]       down columns (per subject)
+scores.sum(axis=1)     # [170 130 180]   across rows (per student)</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>sum</code>, <code>mean</code>, <code>std</code>, <code>min</code>, <code>max</code> reduce an array to a summary.</li>
+              <li>With no <code>axis</code>, they reduce the whole array to one number.</li>
+              <li><code>axis=0</code> works <strong>down the rows</strong> (a result per column); <code>axis=1</code> works <strong>across the columns</strong> (a result per row).</li>
+            </ul>
+            <div class="callout">
+              <span class="label">The mnemonic</span>
+              The axis you name is the one that <strong>disappears</strong>. <code>axis=0</code> collapses the rows, leaving one value per column.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. AI framing: vector + dot product -->
+    <section>
+      <h2><span class="eyebrow">NumPy &middot; 8 of 8</span>All AI data is arrays of numbers</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python"># a "meaning" is stored as a vector of numbers
+a = np.array([1, 0, 2])
+b = np.array([2, 1, 0])
+
+np.dot(a, b)   # 1*2 + 0*1 + 2*0 = 2
+a @ b          # same thing, the @ operator</code></pre>
+            <p class="stmt" style="margin-top:16px">$$ \mathbf{a} \cdot \mathbf{b} = \sum_{i} a_i b_i $$</p>
+          </div>
+          <div>
+            <ul>
+              <li>Text, images, and sound all become arrays of numbers before a model sees them.</li>
+              <li>The <strong>dot product</strong> multiplies two vectors position by position and adds the results into a single number.</li>
+              <li>Read the formula as: for each index <code>i</code>, multiply <code>a</code>'s and <code>b</code>'s value there, then sum them all. A larger result means the vectors point more the same way.</li>
+              <li>That one number is how we will measure similarity between embeddings in Module 4.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Series and DataFrame -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 1 of 11</span>Series and DataFrame</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import pandas as pd
+
+products = pd.DataFrame({
+    "name": ["pen", "notebook", "brush", "marker"],
+    "category": ["office", "office", "art", "art"],
+    "price": [1.5, 3.0, 4.0, 2.5],
+})
+
+products["price"]          # one column: a Series
+type(products["price"])    # pandas ... Series
+type(products)             # pandas ... DataFrame</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>A <strong>DataFrame</strong> is a table: rows and labeled columns, like a spreadsheet you drive with code.</li>
+              <li>A single column is a <strong>Series</strong>: a labeled 1D array (a NumPy array with an index on top).</li>
+              <li>The row labels are the <strong>index</strong>; here it defaults to 0, 1, 2, 3.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. Reading data -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 2 of 11</span>Reading data: read_csv and friends</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">df = pd.read_csv("products.csv")   # the workhorse
+
+# options for real-world files
+pd.read_csv("data.csv", sep=";")               # other delimiters
+pd.read_csv("data.csv", usecols=["name", "price"])
+pd.read_csv("data.csv", na_values=["", "NA"])  # blanks -> NaN
+
+# the reader family: each returns a DataFrame
+pd.read_excel("book.xlsx")
+pd.read_json("records.json")
+pd.read_parquet("data.parquet")
+
+df.to_csv("out.csv", index=False)  # readers mirror writers</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>read_csv</code> is the one you will reach for most; a dict still works for tiny inline data.</li>
+              <li>Options handle messy files: a different <code>sep</code>, a subset of columns with <code>usecols</code>, blanks marked missing with <code>na_values</code>, dates parsed with <code>parse_dates</code>.</li>
+              <li>The whole family (<code>read_excel</code>, <code>read_json</code>, <code>read_parquet</code>, <code>read_sql</code>) returns a DataFrame, so the rest of today applies whatever the source.</li>
+              <li>Every reader has a matching writer (<code>to_csv</code>, <code>to_parquet</code>), so you can round-trip data back out.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Inspect -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 3 of 11</span>Look before you leap</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">df.head()      # first 5 rows (df.tail() for the last)
+df.shape       # (rows, columns)
+df.columns     # the column names
+df.dtypes      # the type of each column
+df.info()      # columns, non-null counts, dtypes
+df.describe()  # count/mean/std/min/max for numbers</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Always inspect before analysis: <code>head</code> to eyeball rows, <code>shape</code> for size.</li>
+              <li><code>dtypes</code> catches a number read as text, a common cause of later bugs.</li>
+              <li><code>info</code> reveals missing values through the non-null counts; <code>describe</code> summarizes the numeric columns at a glance.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. Selecting columns -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 4 of 11</span>Select columns</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python"># one column -> a Series
+df["price"]
+
+# several columns -> a smaller DataFrame
+df[["name", "price"]]
+
+# a Series carries array-like methods
+df["price"].mean()
+df["category"].unique()   # distinct values</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>One name in <code>[ ]</code> returns a <strong>Series</strong>; a list of names returns a <strong>DataFrame</strong>.</li>
+              <li>The double brackets are just a list of columns inside the selection.</li>
+              <li>A Series has array-like methods: <code>.mean()</code>, <code>.unique()</code>, <code>.value_counts()</code>.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">One bracket vs two</span>
+              <code>df["price"]</code> is a column; <code>df[["price"]]</code> is a one-column table. The shape differs, which matters when a function expects one or the other.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15. .loc vs .iloc -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 5 of 11</span>.loc for labels, .iloc for positions</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python"># .loc uses labels: row index and column names
+df.loc[0, "name"]              # value at row-label 0, col "name"
+df.loc[0:2, ["name", "price"]] # label slice (0:2 includes 2)
+
+# .iloc uses integer positions
+df.iloc[0]                     # the first row
+df.iloc[0:2, 0]                # first two rows, first column
+df.iloc[-1]                    # the last row</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>.loc</code> selects by <strong>label</strong>: index values and column names. A label slice <strong>includes</strong> the endpoint.</li>
+              <li><code>.iloc</code> selects by <strong>integer position</strong>, and like normal slicing the endpoint is <strong>excluded</strong>.</li>
+              <li>Reach for <code>.loc</code> most of the time; use <code>.iloc</code> when you truly mean "the nth row".</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16. Boolean filtering -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 6 of 11</span>Filter rows by condition</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python"># rows where a condition is true
+df[df["price"] &gt; 2]
+
+# combine with &amp; (and) / | (or), each in parentheses
+df[(df["price"] &gt; 2) &amp; (df["category"] == "art")]
+
+# membership test
+df[df["category"].isin(["art", "office"])]</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>A condition inside <code>df[...]</code> keeps only the rows where it is <code>True</code>, the same masking idea as NumPy.</li>
+              <li>Combine conditions with <code>&amp;</code> and <code>|</code>, not <code>and</code>/<code>or</code>, and wrap each in parentheses.</li>
+              <li><code>.isin([...])</code> tests membership against a set of values.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">Parentheses are not optional</span>
+              <code>&amp;</code> binds tighter than <code>&gt;</code>, so an unparenthesized condition parses wrong. Wrap each comparison.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17. Derived columns -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 7 of 11</span>Add derived columns</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import numpy as np
+
+df["revenue"] = df["price"] * df["units"]   # column math
+df["pricey"]  = df["price"] &gt; 3             # a boolean column
+df["log_u"]   = np.log(df["units"])         # NumPy on a column</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Assign to a new column name and Pandas computes it for <strong>every row at once</strong>.</li>
+              <li>It is the same vectorized idea as NumPy: no loop over rows.</li>
+              <li>NumPy functions apply straight to a column, since a column is a Series over an array.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 18. Missing data -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 8 of 11</span>Missing data is the norm, not the exception</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">df.isna().sum()      # count missing (NaN) per column
+
+df.dropna()          # drop any row with a missing value
+
+df.fillna(0)         # fill every missing value with 0
+
+# fill one column with its own mean
+df["price"] = df["price"].fillna(df["price"].mean())</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Real data has gaps. Pandas marks them <code>NaN</code>, and <code>.isna()</code> finds them.</li>
+              <li><code>dropna</code> removes rows with gaps; <code>fillna</code> replaces them.</li>
+              <li>Decide per column: drop when a row is unusable, fill (with 0, a mean, or a label) when a sensible default exists.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">A silent trap</span>
+              A <code>NaN</code> in a numeric column can quietly poison a mean or a sum. Handle gaps before you compute on them.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 19. groupby and aggregation -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 9 of 11</span>Group and summarize</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python"># mean price per category
+df.groupby("category")["price"].mean()
+
+# several summaries at once
+df.groupby("category").agg(
+    avg_price=("price", "mean"),
+    total_units=("units", "sum"),
+)
+
+df["category"].value_counts()   # rows per category</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>groupby(key)</code> splits rows into groups that share a key.</li>
+              <li>Then you summarize each group: <code>.mean()</code>, <code>.sum()</code>, <code>.count()</code>, or several at once with <code>.agg(...)</code>.</li>
+              <li><code>value_counts()</code> is the quick "how many of each" on one column.</li>
+            </ul>
+            <div class="analogy"><span class="label">Split, apply, combine</span>Split the rows into groups, apply a summary to each, combine the results into one table.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 20. Mini-pipeline -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 10 of 11</span>A small end-to-end pipeline</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python"># 1. filter (copy so the next steps are safe)
+big = df[df["units"] &gt; 20].copy()
+
+# 2. derive a column
+big["revenue"] = big["price"] * big["units"]
+
+# 3. sort by it, highest first
+big = big.sort_values("revenue", ascending=False)
+
+# 4. summarize per category
+big.groupby("category")["revenue"].sum()</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Most analysis is this shape: <strong>filter, derive, sort, group</strong>.</li>
+              <li>Each step returns a DataFrame, so the next step reads cleanly.</li>
+              <li><code>sort_values(col, ascending=False)</code> orders rows; add <code>.head(n)</code> for a top-n.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 21. The copy trap -->
+    <section>
+      <h2><span class="eyebrow">Pandas &middot; 11 of 11</span>The copy trap, and the clear way</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python"># risky: this may be a view of df, not a copy
+subset = df[df["price"] &gt; 2]
+subset["price"] = 0     # SettingWithCopyWarning
+
+# clear: select and assign in one .loc step
+df.loc[df["price"] &gt; 2, "price"] = 0
+
+# or take an explicit copy first
+subset = df[df["price"] &gt; 2].copy()
+subset["price"] = 0     # safe now</code></pre>
+          </div>
+          <div>
+            <div class="callout">
+              <span class="label">Avoid the copy trap</span>
+              Chained indexing like <code>df[...][...] = ...</code> may write to a temporary copy, not the real table, and Pandas warns you. Use <code>.loc[rows, column]</code> to select and assign in one step, or take an explicit <code>.copy()</code> when you want a separate table.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 22. Wrap -->
+    <section>
+      <h2><span class="eyebrow">Wrap up</span>Your turn, and what is next</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Micro-assignment</div>
+            <ul>
+              <li>Eight problems, four on NumPy and four on Pandas.</li>
+              <li>Includes normalizing a vector, cleaning a messy table, and finding the top group.</li>
+              <li>Details in the micro-assignment folder.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Next: class 1.5, APIs and the web</div>
+            <ul>
+              <li>Talk to a service over the web with <code>requests</code>.</li>
+              <li>Make your first LLM call, local and hosted.</li>
+              <li>Free and on your own machine.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+      primaryColor: '#ffffff', primaryTextColor: '#172033', primaryBorderColor: '#2563eb',
+      lineColor: '#2563eb', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', fontSize: '16px' },
+    flowchart: { nodeSpacing: 45, rankSpacing: 50, htmlLabels: true } });
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', width: 1280, height: 720,
+    margin: 0, center: false, transition: 'slide', plugins: [ RevealHighlight, RevealNotes ]
+  }).then(function () {
+    if (window.mermaid) { mermaid.run(); }
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        { left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false } ], throwOnError: false });
+    }
+  });
+</script>
+</body>
+</html>

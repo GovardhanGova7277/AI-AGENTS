@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class 2.1 - What is machine learning?</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="../../../assets/theme.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="deck-footer">GenAI and Agentic AI &middot; Module 2 &middot; Class 2.1</div>
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section class="title" data-background-gradient="linear-gradient(120deg, #1e3a8a 0%, #3730a3 55%, #312e81 100%)">
+      <span class="kicker">Module 2 &middot; ML and DL essentials &middot; Class 2.1</span>
+      <h1>What is machine learning?</h1>
+      <p class="lead">Stop writing the rules by hand. Show the machine labeled examples, let it find the rule, then test whether it holds on data it has never seen.</p>
+    </section>
+
+    <!-- 2. What we cover today (roadmap, no recap) -->
+    <section>
+      <h2><span class="eyebrow">Today</span>The road for this class</h2>
+      <div class="body">
+        <div class="path-layout">
+          <div class="journey">
+            <div class="step"><div class="step-num">1</div><div><div class="step-title">Two ways to get a rule<span class="step-note">Write it by hand, or learn it from examples.</span></div></div></div>
+            <div class="step"><div class="step-num">2</div><div><div class="step-title">The supervised setup<span class="step-note">Features, labels, and a dataset that is just a table.</span></div></div></div>
+            <div class="step"><div class="step-num">3</div><div><div class="step-title">Task types<span class="step-note">Predict a number, one of two classes, or one of many.</span></div></div></div>
+            <div class="step"><div class="step-num">4</div><div><div class="step-title">Judging a model<span class="step-note">Measure error, then insist it works on unseen data.</span></div></div></div>
+            <div class="step"><div class="step-num">5</div><div><div class="step-title">The two failure modes<span class="step-note">Overfitting and underfitting, and the sweet spot.</span></div></div></div>
+            <div class="step"><div class="step-num">6</div><div><div class="step-title">Honest evaluation<span class="step-note">Transforms, data leakage, and metrics that do not lie.</span></div></div></div>
+          </div>
+          <div class="practice">
+            <div class="col-label">Why start here</div>
+            <div class="pill"><span class="pill-tag">One loop, everywhere</span>Transformers, LLMs, and agents are all this same loop at a larger scale: examples in, a learned function out, checked on held-out data.</div>
+            <div class="pill"><span class="pill-tag">Learn it once</span>Get the vocabulary and the honest-evaluation habit right today, and every later class reads as a variation on it.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Rules vs learned -->
+    <section>
+      <h2><span class="eyebrow">The core flip</span>You write rules, or you learn them</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Traditional code</div>
+            <ul class="tight">
+              <li>You write the rules by hand.</li>
+              <li><code>if amount &gt; 10000: flag()</code></li>
+              <li>Every case is one you thought of.</li>
+              <li>Breaks the moment the world shifts.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Machine learning</div>
+            <ul class="tight">
+              <li>You supply labeled <strong>examples</strong>.</li>
+              <li>The algorithm finds the rule itself.</li>
+              <li>It covers cases you never enumerated.</li>
+              <li>It adapts as you feed it more data.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout">
+          <span class="label">When to reach for ML</span>
+          Use it when the rule is too complex or too fuzzy to write out: recognizing a cat, flagging a fraudulent card swipe, ranking search results, estimating a house price. If a short if-statement would do the job, write the if-statement.
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Spam both ways -->
+    <section>
+      <h2><span class="eyebrow">The core flip</span>A spam filter, built both ways</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <div class="code-cap">Hand-written rules</div>
+            <pre><code data-trim class="language-python">def is_spam(email):
+    if "free money" in email:  return True
+    if "you won" in email:     return True
+    if email.count("!") &gt; 5:   return True
+    return False
+# misses "fr33 m0ney"; flags a real "you won the grant"</code></pre>
+          </div>
+          <div>
+            <div class="col-label">Learned from examples</div>
+            <ul>
+              <li>Collect thousands of emails, each labeled spam or not.</li>
+              <li>The model finds the pattern across all of them.</li>
+              <li>New tricks like <code>fr33 m0ney</code> are caught once similar examples appear.</li>
+            </ul>
+            <div class="analogy"><span class="label">The real shift</span>You stop editing a growing pile of if-statements and start curating examples. Gmail's spam filter is trained this way, not hand-coded, which is why it keeps working as spammers change tactics.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Three kinds of learning -->
+    <section>
+      <h2><span class="eyebrow">The landscape</span>Three kinds of machine learning</h2>
+      <div class="body">
+        <div class="cols cols-3">
+          <div class="card">
+            <div class="col-label">Supervised</div>
+            <ul class="tight">
+              <li>Learn from <strong>labeled</strong> examples: each input carries the right answer.</li>
+              <li>Predict a house price from its features.</li>
+              <li>Real: Zillow's Zestimate, a bank's credit score.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Unsupervised</div>
+            <ul class="tight">
+              <li>No labels. Find <strong>structure</strong> and groups in the data itself.</li>
+              <li>Group customers by behavior, with no target given.</li>
+              <li>Real: Netflix taste clusters, retail customer segments.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Reinforcement</div>
+            <ul class="tight">
+              <li>Learn by <strong>trial and reward</strong>: act, get feedback, improve.</li>
+              <li>Master a game by playing it many times.</li>
+              <li>Real: DeepMind's AlphaGo, robot locomotion.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout">
+          <span class="label">Where this course lives</span>
+          Almost everything ahead is supervised learning. It is also how language models are trained, at a vastly larger scale: predict the next token, with the true next token as the label. Reinforcement returns much later, when we shape how models behave.
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Unsupervised made real -->
+    <section>
+      <h2><span class="eyebrow">The landscape</span>Unsupervised: structure without labels</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">Nobody says which group a point belongs to. The algorithm proposes the groups from the data, and you interpret them afterward.</p>
+            <ul class="tight" style="margin-top:14px">
+              <li>A telecom firm feeds in usage data and gets back segments: heavy streamers, weekend callers, dormant lines.</li>
+              <li>The segments were never labeled. The model found them, then the team names and targets them.</li>
+              <li>Real: customer segmentation for offers, and the "customers who bought this" engines behind Amazon and Netflix.</li>
+            </ul>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 380 250" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="100" cy="170" rx="52" ry="42" fill="#2563eb" opacity="0.07"/>
+              <ellipse cx="190" cy="80" rx="50" ry="40" fill="#15803d" opacity="0.07"/>
+              <ellipse cx="300" cy="170" rx="52" ry="42" fill="#be123c" opacity="0.07"/>
+              <g fill="#2563eb"><circle cx="85" cy="160" r="5"/><circle cx="110" cy="150" r="5"/><circle cx="95" cy="185" r="5"/><circle cx="120" cy="178" r="5"/><circle cx="75" cy="180" r="5"/></g>
+              <g fill="#15803d"><circle cx="175" cy="72" r="5"/><circle cx="200" cy="65" r="5"/><circle cx="190" cy="95" r="5"/><circle cx="210" cy="88" r="5"/><circle cx="168" cy="92" r="5"/></g>
+              <g fill="#be123c"><circle cx="288" cy="162" r="5"/><circle cx="312" cy="152" r="5"/><circle cx="298" cy="185" r="5"/><circle cx="320" cy="178" r="5"/><circle cx="278" cy="180" r="5"/></g>
+            </svg>
+          </div>
+        </div>
+        <p class="stmt" style="margin-top:4px">From here on, every example is supervised: inputs paired with a known answer.</p>
+      </div>
+    </section>
+
+    <!-- 7. Features and labels -->
+    <section>
+      <h2><span class="eyebrow">Supervised learning</span>Features go in, a label comes out</h2>
+      <div class="body">
+        <div class="tool-detail">
+          <div>
+            <p class="stmt">Every example is a pair: the inputs, and the answer they should produce.</p>
+            <ul>
+              <li><strong>Features</strong> (<code>X</code>): the inputs the model sees.</li>
+              <li><strong>Label</strong> (<code>y</code>): the answer it should produce.</li>
+              <li>Training means finding a mapping from <code>X</code> to <code>y</code> that also holds for pairs it has not seen.</li>
+            </ul>
+          </div>
+          <div class="analogy">
+            <span class="label">Think of it as</span>
+            A trainee estate agent in their first month. They walk through thousands of past sales, each home's details and the price it fetched, and slowly build an instinct for pricing. Nobody hands them a formula. They absorb it from labeled examples until they can price a new listing on sight.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Feature/label table -->
+    <section>
+      <h2><span class="eyebrow">Supervised learning</span>A dataset is a table</h2>
+      <div class="body">
+        <div class="grid-table" style="grid-template-columns: repeat(4, 1fr)">
+          <div class="gt-head">size (sqft)</div><div class="gt-head">bedrooms</div><div class="gt-head">age (years)</div><div class="gt-head">price ($k)</div>
+          <div>900</div><div>2</div><div>15</div><div class="gt-accent">240</div>
+          <div>1500</div><div>3</div><div>8</div><div class="gt-accent">355</div>
+          <div>2200</div><div>4</div><div>3</div><div class="gt-accent">512</div>
+        </div>
+        <div class="cols cols-2" style="margin-top:22px">
+          <div class="callout"><span class="label">Features (X)</span>The first three columns: size, bedrooms, age. Every row is one example the model sees.</div>
+          <div class="callout"><span class="label">Label (y)</span>The last column: price. What it predicts, and exactly what you do not have for a new house on the market.</div>
+        </div>
+        <p class="stmt" style="margin-top:4px">This is the shape of the datasets scikit-learn ships, and the shape you built in Pandas in Module 1.</p>
+      </div>
+    </section>
+
+    <!-- 9. Regression vs classification (the fork) -->
+    <section>
+      <h2><span class="eyebrow">Two task types</span>The label is a number, or a category</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Regression: a number</div>
+            <ul class="tight">
+              <li>House price, tomorrow's temperature, a ride's arrival time.</li>
+              <li>The label is continuous: it can land anywhere on a scale.</li>
+              <li>Real: Zillow's Zestimate, Uber and Ola fare and ETA.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Classification: a category</div>
+            <ul class="tight">
+              <li>Spam or not, which digit, which disease.</li>
+              <li>The label is one of a fixed set of choices.</li>
+              <li>Real: Gmail spam filter, card fraud flags.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout">
+          <span class="label">Same setup, different answer shape</span>
+          Both learn a mapping from features to a label. Only the label changes: a number for regression, a class for classification. The next three slides take each in turn.
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Regression in detail -->
+    <section>
+      <h2><span class="eyebrow">Task type 1</span>Regression: fit a line, read a number off it</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <ul>
+              <li>The model fits a line (or curve) through the examples.</li>
+              <li>To predict, you read the line at the new input's position.</li>
+              <li>An example's <strong>error</strong> is its vertical distance from the line. Training pushes the total distance down.</li>
+            </ul>
+            <div class="analogy" style="margin-top:12px"><span class="label">Where you have seen it</span>Zillow's Zestimate reads a price off features of your home. A credit score and an NBFC's loan pricing are the same idea: a number learned from past cases. How the line is actually found is class 2.2 (How models learn).</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 420 250" xmlns="http://www.w3.org/2000/svg">
+              <line x1="50" y1="30" x2="50" y2="210" stroke="#6b7793" stroke-width="1.5"/>
+              <line x1="50" y1="210" x2="390" y2="210" stroke="#6b7793" stroke-width="1.5"/>
+              <text x="220" y="240" text-anchor="middle" class="axlbl">size of the house</text>
+              <text x="20" y="120" text-anchor="middle" class="axlbl" transform="rotate(-90 20 120)">price</text>
+              <line x1="55" y1="193" x2="385" y2="74" stroke="#2563eb" stroke-width="3"/>
+              <line x1="190" y1="144" x2="190" y2="158" stroke="#be123c" stroke-width="2" stroke-dasharray="3 2"/>
+              <text x="205" y="156" class="leg" fill="#be123c">error</text>
+              <g fill="#172033">
+                <circle cx="70" cy="188" r="4"/><circle cx="110" cy="172" r="4"/><circle cx="150" cy="168" r="4"/><circle cx="190" cy="158" r="4"/><circle cx="230" cy="124" r="4"/><circle cx="270" cy="122" r="4"/><circle cx="310" cy="98" r="4"/><circle cx="350" cy="84" r="4"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Binary classification -->
+    <section>
+      <h2><span class="eyebrow">Task type 2</span>Binary classification: one of two classes</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <ul>
+              <li>The model learns a <strong>boundary</strong> that separates the two classes.</li>
+              <li>It usually outputs a probability, then a <strong>threshold</strong> (often 0.5) turns it into a decision.</li>
+              <li>Move the threshold to trade caution against coverage: flag more, or flag only the sure cases.</li>
+            </ul>
+            <div class="analogy" style="margin-top:12px"><span class="label">Where you have seen it</span>Spam or not, a card swipe legit or fraud, a loan likely to repay or default. Today's notebook is exactly this: a tumor benign or malignant.</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+              <line x1="48" y1="26" x2="48" y2="250" stroke="#6b7793" stroke-width="1.5"/>
+              <line x1="48" y1="250" x2="384" y2="250" stroke="#6b7793" stroke-width="1.5"/>
+              <text x="216" y="278" text-anchor="middle" class="axlbl">tumor size</text>
+              <text x="20" y="140" text-anchor="middle" class="axlbl" transform="rotate(-90 20 140)">cell irregularity</text>
+              <line x1="152" y1="60" x2="252" y2="245" stroke="#6b7793" stroke-width="2" stroke-dasharray="6 4"/>
+              <g fill="#2563eb">
+                <circle cx="75" cy="205" r="5"/><circle cx="95" cy="225" r="5"/><circle cx="120" cy="190" r="5"/><circle cx="140" cy="215" r="5"/><circle cx="105" cy="175" r="5"/><circle cx="85" cy="232" r="5"/>
+              </g>
+              <g fill="#be123c">
+                <circle cx="260" cy="110" r="5"/><circle cx="290" cy="85" r="5"/><circle cx="320" cy="120" r="5"/><circle cx="340" cy="90" r="5"/><circle cx="275" cy="135" r="5"/><circle cx="310" cy="70" r="5"/>
+              </g>
+              <circle cx="70" cy="45" r="5" fill="#2563eb"/><text x="82" y="49" class="leg">benign</text>
+              <circle cx="70" cy="70" r="5" fill="#be123c"/><text x="82" y="74" class="leg">malignant</text>
+              <text x="332" y="212" text-anchor="middle" class="leg" fill="#6b7793">decision</text>
+              <text x="332" y="228" text-anchor="middle" class="leg" fill="#6b7793">boundary</text>
+              <line x1="300" y1="218" x2="246" y2="234" stroke="#6b7793" stroke-width="1"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. Multiclass classification -->
+    <section>
+      <h2><span class="eyebrow">Task type 3</span>Multiclass: one of many categories</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <ul>
+              <li>Now there are more than two classes: 10 digits, 3 iris species, dozens of product categories.</li>
+              <li>The model produces a <strong>score for every class</strong> and picks the highest.</li>
+              <li>Those scores are turned into probabilities that sum to one. The recipe is called softmax, decoded in class 2.4 (PyTorch fundamentals).</li>
+            </ul>
+            <div class="analogy" style="margin-top:12px"><span class="label">Where you have seen it</span>Reading handwritten digits on posted mail, sorting a photo into a species, routing a product to its category on Amazon. The notebook in class 2.4 (PyTorch fundamentals) classifies handwritten digits, 0 through 9.</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 380 250" xmlns="http://www.w3.org/2000/svg">
+              <line x1="30" y1="210" x2="360" y2="210" stroke="#6b7793" stroke-width="1.5"/>
+              <text x="16" y="120" text-anchor="middle" class="axlbl" transform="rotate(-90 16 120)">score</text>
+              <g>
+                <rect x="40" y="180" width="22" height="30" fill="#2563eb"/>
+                <rect x="72" y="185" width="22" height="25" fill="#2563eb"/>
+                <rect x="104" y="170" width="22" height="40" fill="#2563eb"/>
+                <rect x="136" y="180" width="22" height="30" fill="#2563eb"/>
+                <rect x="168" y="190" width="22" height="20" fill="#2563eb"/>
+                <rect x="200" y="175" width="22" height="35" fill="#2563eb"/>
+                <rect x="232" y="182" width="22" height="28" fill="#2563eb"/>
+                <rect x="264" y="70" width="22" height="140" fill="#15803d"/>
+                <rect x="296" y="188" width="22" height="22" fill="#2563eb"/>
+                <rect x="328" y="184" width="22" height="26" fill="#2563eb"/>
+              </g>
+              <g class="leg" text-anchor="middle" fill="#6b7793" font-size="12">
+                <text x="51" y="228">0</text><text x="83" y="228">1</text><text x="115" y="228">2</text><text x="147" y="228">3</text><text x="179" y="228">4</text><text x="211" y="228">5</text><text x="243" y="228">6</text><text x="275" y="228" fill="#15803d" font-weight="700">7</text><text x="307" y="228">8</text><text x="339" y="228">9</text>
+              </g>
+              <text x="275" y="60" text-anchor="middle" class="leg" fill="#15803d" font-weight="700">predicted: 7</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Evaluation concept, before generalization -->
+    <section>
+      <h2><span class="eyebrow">Judging a model</span>How do we know it is any good?</h2>
+      <div class="body">
+        <p class="stmt">Evaluation is one move: make predictions, compare each to the true answer, then collapse the gap into a single number.</p>
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Regression: how far off</div>
+            <ul class="tight">
+              <li>Average the distance between prediction and truth.</li>
+              <li>Predict $355k, true $340k: off by $15k.</li>
+              <li>Lower is better; the units are dollars.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Classification: how often right</div>
+            <ul class="tight">
+              <li>Count the fraction of predictions that match.</li>
+              <li>92 correct out of 100: accuracy 0.92.</li>
+              <li>Higher is better; the scale is 0 to 1.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout"><span class="label">The question that comes next</span>A score is only as honest as the data it is measured on. That is what the following slides fix, and we sharpen these numbers again near the end.</div>
+      </div>
+    </section>
+
+    <!-- 14. Why split / generalization -->
+    <section>
+      <h2><span class="eyebrow">Generalization</span>The point is data it has never seen</h2>
+      <div class="body">
+        <p class="stmt">A model that only scores well on the examples it trained on is worthless. What matters is performance on new data.</p>
+        <div class="analogy">
+          <span class="label">The exam analogy</span>
+          Studying past papers is training. Score yourself on those same papers and you are just measuring memory. The real exam asks questions you have not seen, so we hold some data back to play that role and refuse to let the model study it.
+        </div>
+        <div class="callout"><span class="label">The word for it</span>Generalization is how well the learned rule carries to unseen inputs. It is the only thing we actually care about.</div>
+      </div>
+    </section>
+
+    <!-- 15. Train/val/test -->
+    <section>
+      <h2><span class="eyebrow">Generalization</span>Split into train, validation, and test</h2>
+      <div class="body">
+        <div class="split-row">
+          <div class="split-box"><div class="col-label">Train</div><p>The model learns here. Usually the largest part.</p></div>
+          <div class="split-box"><div class="col-label">Validation</div><p>You tune choices here (model size, settings) and watch for overfitting.</p></div>
+          <div class="split-box"><div class="col-label">Test</div><p>Touched once, at the very end, for the final honest number.</p></div>
+        </div>
+        <div class="callout">
+          <span class="label">Why three, not two</span>
+          If you keep tuning against the test set, it quietly becomes part of training and stops being honest. Validation absorbs the tuning so the test set stays untouched and can still surprise you.
+        </div>
+        <p class="stmt" style="margin-top:2px">A common split is roughly 70 percent train, 15 validation, 15 test, shuffled first so each part looks like the whole.</p>
+      </div>
+    </section>
+
+    <!-- 16. Held-out is honest -->
+    <section>
+      <h2><span class="eyebrow">Generalization</span>Only the held-out score is honest</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">model.fit(X_train, y_train)
+
+model.score(X_train, y_train)   # 0.99  flattering, it saw this
+model.score(X_test,  y_test)    # 0.86  the number that counts</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>The training score is inflated: the model already saw those answers.</li>
+              <li>The test score estimates real-world performance on new inputs.</li>
+              <li>Report the test score, never the training score.</li>
+            </ul>
+            <div class="callout" style="margin-top:12px"><span class="label">The gap is a signal</span>A small gap is healthy. A wide gap, high on train and low on test, is the warning we unpack next.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16b. The ML process, end to end -->
+    <section>
+      <h2><span class="eyebrow">The workflow</span>The machine learning process, end to end</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 980 480" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:448px" font-family="Segoe UI, Arial, sans-serif">
+            <defs>
+              <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker>
+            </defs>
+            <rect x="40" y="195" width="120" height="95" rx="6" fill="#eaf0ff" stroke="#2563eb" stroke-width="1.5"/>
+            <text x="100" y="248" text-anchor="middle" font-size="17" fill="#172033">Given data</text>
+            <rect x="248" y="114" width="130" height="46" rx="6" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/>
+            <text x="313" y="142" text-anchor="middle" font-size="16" fill="#172033">Training set</text>
+            <rect x="248" y="219" width="130" height="46" rx="6" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/>
+            <text x="313" y="247" text-anchor="middle" font-size="16" fill="#172033">Validation set</text>
+            <rect x="248" y="334" width="130" height="46" rx="6" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/>
+            <text x="313" y="362" text-anchor="middle" font-size="16" fill="#172033">Test set</text>
+            <path d="M160,230 L244,140" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+            <path d="M160,243 L242,242" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+            <path d="M160,256 L244,354" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+            <ellipse cx="640" cy="52" rx="80" ry="26" fill="#e6e9f4" stroke="#6b7793" stroke-width="1.5"/>
+            <text x="640" y="57" text-anchor="middle" font-size="16" fill="#172033">Select a model</text>
+            <rect x="558" y="110" width="164" height="54" rx="6" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/>
+            <text x="640" y="142" text-anchor="middle" font-size="16" fill="#172033">Train the model</text>
+            <rect x="558" y="215" width="164" height="54" rx="6" fill="#f7c9a3" stroke="#c2621f" stroke-width="1.5"/>
+            <text x="640" y="247" text-anchor="middle" font-size="16" fill="#172033">Validate the model</text>
+            <rect x="553" y="330" width="174" height="54" rx="6" fill="#bfeef4" stroke="#2596a8" stroke-width="1.5"/>
+            <text x="640" y="352" text-anchor="middle" font-size="16" fill="#172033">Test how it</text>
+            <text x="640" y="372" text-anchor="middle" font-size="16" fill="#172033">generalizes</text>
+            <ellipse cx="640" cy="440" rx="58" ry="25" fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"/>
+            <text x="640" y="445" text-anchor="middle" font-size="16" fill="#172033">Done</text>
+            <path d="M378,137 L554,137" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arr)"/>
+            <path d="M378,242 L554,242" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arr)"/>
+            <path d="M378,357 L549,357" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arr)"/>
+            <path d="M640,78 L640,106" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+            <path d="M640,164 L640,211" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+            <path d="M640,269 L640,326" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+            <text x="652" y="302" font-size="14" fill="#3f4a63">good enough</text>
+            <path d="M640,384 L640,413" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+            <path d="M722,242 L860,242 L860,52 L722,52" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+            <text x="791" y="233" text-anchor="middle" font-size="14" fill="#3f4a63">tune / reselect</text>
+          </svg>
+        </div>
+        <p class="stmt" style="margin-top:4px">Split the data once. Train on one part, tune against validation in a loop, and touch the test set only at the very end. The dashed arrows show which split feeds which step.</p>
+      </div>
+    </section>
+
+    <!-- 17. Overfitting -->
+    <section>
+      <h2><span class="eyebrow">The two failure modes</span>Overfitting: memorizing the answer key</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:start">
+          <div>
+            <p class="stmt">An overfit model memorizes the training data, noise and all, instead of the underlying pattern.</p>
+            <div class="analogy" style="margin-top:12px">
+              <span class="label">The student who memorized the key</span>
+              Perfect on the exact practice questions, lost the moment the wording changes. It learned the answers, not the subject.
+            </div>
+          </div>
+          <div class="card">
+            <div class="col-label">How to spot it</div>
+            <ul class="tight">
+              <li>Training score high, test score clearly lower.</li>
+              <li>A wide train-to-test gap.</li>
+              <li>Validation error starts rising while training error keeps falling.</li>
+            </ul>
+            <div class="col-label" style="margin-top:14px">How to treat it</div>
+            <ul class="tight">
+              <li>More data, a simpler model, or regularization.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 18. Underfitting -->
+    <section>
+      <h2><span class="eyebrow">The two failure modes</span>Underfitting: too simple to learn</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:start">
+          <div>
+            <p class="stmt">An underfit model is too simple to capture the real pattern. It does poorly even on the data it trained on.</p>
+            <div class="analogy" style="margin-top:12px">
+              <span class="label">The student who barely studied</span>
+              Struggles on the practice questions and the exam alike. Nothing was memorized, but nothing was learned either.
+            </div>
+          </div>
+          <div class="card">
+            <div class="col-label">How to spot it</div>
+            <ul class="tight">
+              <li>Training score low, test score also low.</li>
+              <li>Little gap, but both numbers are bad.</li>
+              <li>The model plateaus early and cannot improve.</li>
+            </ul>
+            <div class="col-label" style="margin-top:14px">How to treat it</div>
+            <ul class="tight">
+              <li>More capacity, better features, or longer training.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 19. Fit trio figure -->
+    <section>
+      <h2><span class="eyebrow">The two failure modes</span>What they look like on the same data</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:436px">
+            <!-- Panel 1: underfit -->
+            <rect x="8" y="34" width="206" height="204" fill="#f8faff" stroke="#e2e7f5"/>
+            <line x1="26" y1="55" x2="26" y2="228" stroke="#cbd3e6" stroke-width="1.5"/>
+            <line x1="26" y1="228" x2="191" y2="228" stroke="#cbd3e6" stroke-width="1.5"/>
+            <line x1="26" y1="116" x2="191" y2="124" stroke="#b45309" stroke-width="3"/>
+            <g fill="#2563eb">
+              <circle cx="34" cy="95" r="4"/><circle cx="56" cy="120" r="4"/><circle cx="78" cy="150" r="4"/><circle cx="100" cy="170" r="4"/><circle cx="122" cy="165" r="4"/><circle cx="144" cy="140" r="4"/><circle cx="166" cy="110" r="4"/><circle cx="186" cy="90" r="4"/>
+            </g>
+            <text x="111" y="258" text-anchor="middle" class="zone" fill="#172033">Underfit</text>
+            <text x="111" y="278" text-anchor="middle" class="axlbl">too simple, misses the trend</text>
+            <!-- Panel 2: good fit -->
+            <rect x="227" y="34" width="206" height="204" fill="#f8faff" stroke="#e2e7f5"/>
+            <line x1="245" y1="55" x2="245" y2="228" stroke="#cbd3e6" stroke-width="1.5"/>
+            <line x1="245" y1="228" x2="410" y2="228" stroke="#cbd3e6" stroke-width="1.5"/>
+            <path d="M253,98 C300,182 350,182 405,92" fill="none" stroke="#15803d" stroke-width="3"/>
+            <g fill="#2563eb">
+              <circle cx="253" cy="95" r="4"/><circle cx="275" cy="120" r="4"/><circle cx="297" cy="150" r="4"/><circle cx="319" cy="170" r="4"/><circle cx="341" cy="165" r="4"/><circle cx="363" cy="140" r="4"/><circle cx="385" cy="110" r="4"/><circle cx="405" cy="90" r="4"/>
+            </g>
+            <text x="330" y="258" text-anchor="middle" class="zone" fill="#172033">Good fit</text>
+            <text x="330" y="278" text-anchor="middle" class="axlbl">captures the shape, ignores noise</text>
+            <!-- Panel 3: overfit -->
+            <rect x="446" y="34" width="206" height="204" fill="#f8faff" stroke="#e2e7f5"/>
+            <line x1="464" y1="55" x2="464" y2="228" stroke="#cbd3e6" stroke-width="1.5"/>
+            <line x1="464" y1="228" x2="629" y2="228" stroke="#cbd3e6" stroke-width="1.5"/>
+            <path d="M472,95 C481,60 486,160 494,120 C502,185 509,95 516,150 C524,110 531,205 538,170 C546,205 553,120 560,165 C568,120 575,185 582,140 C590,95 597,150 604,110 C612,150 618,60 624,90" fill="none" stroke="#be123c" stroke-width="3"/>
+            <g fill="#2563eb">
+              <circle cx="472" cy="95" r="4"/><circle cx="494" cy="120" r="4"/><circle cx="516" cy="150" r="4"/><circle cx="538" cy="170" r="4"/><circle cx="560" cy="165" r="4"/><circle cx="582" cy="140" r="4"/><circle cx="604" cy="110" r="4"/><circle cx="624" cy="90" r="4"/>
+            </g>
+            <text x="549" y="258" text-anchor="middle" class="zone" fill="#172033">Overfit</text>
+            <text x="549" y="278" text-anchor="middle" class="axlbl">chases every point, learns the noise</text>
+          </svg>
+        </div>
+        <p class="stmt" style="margin-top:2px">Same points, three models. The straight line is too rigid, the wild curve is too eager, and the middle one is what we want.</p>
+      </div>
+    </section>
+
+    <!-- 20. Detecting while training -->
+    <section>
+      <h2><span class="eyebrow">The two failure modes</span>Detecting it while you train</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 620 345" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:430px">
+            <rect x="410" y="40" width="150" height="210" fill="#2563eb" opacity="0.06"/>
+            <line x1="70" y1="40" x2="70" y2="250" stroke="#6b7793" stroke-width="1.5"/>
+            <line x1="70" y1="250" x2="560" y2="250" stroke="#6b7793" stroke-width="1.5"/>
+            <text x="150" y="62" text-anchor="middle" class="zone">underfit</text>
+            <text x="485" y="62" text-anchor="middle" class="zone">overfit</text>
+            <text x="30" y="145" text-anchor="middle" class="axlbl" transform="rotate(-90 30 145)">error</text>
+            <path d="M90,80 C200,150 350,210 555,238" fill="none" stroke="#2563eb" stroke-width="3"/>
+            <path d="M90,105 C200,210 300,215 360,212 S500,150 555,110" fill="none" stroke="#b45309" stroke-width="3"/>
+            <circle cx="360" cy="212" r="5" fill="#15803d"/>
+            <line x1="360" y1="212" x2="360" y2="250" stroke="#15803d" stroke-width="1" stroke-dasharray="4 3"/>
+            <text x="360" y="270" text-anchor="middle" class="zone" fill="#15803d">sweet spot</text>
+            <text x="315" y="298" text-anchor="middle" class="axlbl">model complexity, or training time</text>
+            <rect x="150" y="322" width="20" height="4" fill="#2563eb"/><text x="178" y="327" class="leg">training error</text>
+            <rect x="340" y="322" width="20" height="4" fill="#b45309"/><text x="368" y="327" class="leg">validation error</text>
+          </svg>
+        </div>
+        <p class="stmt" style="margin-top:2px">Training error keeps falling. Validation error falls, then turns up as the model starts memorizing. Stop near the turn.</p>
+      </div>
+    </section>
+
+    <!-- 21. Transforms on the data -->
+    <section>
+      <h2><span class="eyebrow">Honest evaluation</span>First, the transforms we apply to data</h2>
+      <div class="body">
+        <p class="stmt">Raw features rarely go straight into a model. Three transforms show up almost every time, and each one is <strong>learned from the data</strong>.</p>
+        <div class="cols cols-3">
+          <div class="card">
+            <div class="col-label">Scale</div>
+            <ul class="tight">
+              <li>Put features on one scale so size does not swamp bedrooms.</li>
+              <li>Subtract the mean, divide by the spread.</li>
+              <li>Learned: the mean and spread.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Encode</div>
+            <ul class="tight">
+              <li>Turn text categories into numbers.</li>
+              <li>"red, green, blue" becomes columns of 0s and 1s.</li>
+              <li>Learned: the list of categories.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Impute</div>
+            <ul class="tight">
+              <li>Fill missing values so rows are usable.</li>
+              <li>Replace a blank age with the column's median.</li>
+              <li>Learned: the fill value.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout"><span class="label">Hold this thought</span>Each transform learns something (a mean, a category list, a median) from whatever data you fit it on. Fit it on the wrong data and you have a problem, which is the next slide.</div>
+      </div>
+    </section>
+
+    <!-- 22. Data leakage -->
+    <section>
+      <h2><span class="eyebrow">Honest evaluation</span>Data leakage: the peek that lies</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python"># WRONG: the scaler learns the mean from ALL rows,
+#        so it has already seen the test data
+X = scaler.fit_transform(X)
+X_train, X_test = split(X)
+
+# RIGHT: split first, fit the scaler on train only
+X_train, X_test = split(X)
+X_train = scaler.fit_transform(X_train)
+X_test  = scaler.transform(X_test)</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Leakage is any test information sneaking into training, often through a transform fit too early.</li>
+              <li>It inflates the score, then the model disappoints in production.</li>
+              <li>Rule: split first, then fit every transform on the train part alone and only apply it to the rest.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 23. Metrics: accuracy, precision, recall -->
+    <section>
+      <h2><span class="eyebrow">Honest evaluation</span>Quantify quality: accuracy, precision, recall</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt" style="margin-bottom:12px">Sort every prediction into four boxes, then three numbers fall out.</p>
+            <div class="grid-table" style="grid-template-columns: 1.1fr 1fr 1fr">
+              <div class="gt-head"></div><div class="gt-head">truly positive</div><div class="gt-head">truly negative</div>
+              <div class="gt-head">flagged positive</div><div>true positive</div><div>false positive</div>
+              <div class="gt-head">flagged negative</div><div>false negative</div><div>true negative</div>
+            </div>
+          </div>
+          <div>
+            <ul>
+              <li><strong>Accuracy</strong>: of all predictions, the fraction correct.</li>
+              <li><strong>Precision</strong>: of the ones you flagged positive, how many really were. Punishes false alarms.</li>
+              <li><strong>Recall</strong>: of the real positives, how many you caught. Punishes misses.</li>
+            </ul>
+            <div class="callout" style="margin-top:12px"><span class="label">There is a trade</span>Flag everything and recall is perfect but precision collapses. The right balance depends on whether a miss or a false alarm costs more.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 24. Imbalanced data -->
+    <section>
+      <h2><span class="eyebrow">Honest evaluation</span>Why accuracy alone can flatter a lazy model</h2>
+      <div class="body">
+        <p class="stmt">If 99.8 percent of card swipes are legitimate, a model that always says "legit" scores 99.8 percent accuracy and catches zero fraud.</p>
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">What accuracy hides</div>
+            <ul class="tight">
+              <li>It rewards guessing the majority class.</li>
+              <li>On rare events, the number looks great and the model is useless.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">What recall exposes</div>
+            <ul class="tight">
+              <li>"Always legit" has recall 0 on fraud: it caught none.</li>
+              <li>On imbalanced data, watch precision and recall, not accuracy.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout"><span class="label">Same lesson, real systems</span>Fraud, disease screening, and spam are all rare-positive problems. The same metrics return in Module 4 (LLMs and GenAI): judging whether a retriever pulled the few relevant documents out of thousands, or whether an answer is faithful rather than made up, is the same rare-positive problem in disguise.</div>
+      </div>
+    </section>
+
+    <!-- 25. Build -->
+    <section>
+      <h2><span class="eyebrow">Build</span>See overfitting happen</h2>
+      <div class="body">
+        <p class="lead">In the notebook you load a real dataset (breast cancer, benign versus malignant, from scikit-learn), split it correctly, train a classifier, and read the honest test score. Then you deliberately overpower the model and watch the training score climb while the test score falls: overfitting, live.</p>
+        <div class="callout"><span class="label">The habit to build</span>Split first, fit transforms on train only, and report the held-out number. Everything else in this course assumes it.</div>
+      </div>
+    </section>
+
+    <!-- 26. Wrap -->
+    <section>
+      <h2><span class="eyebrow">Wrap up</span>Your turn, and what is next</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Micro-assignment</div>
+            <ul>
+              <li>Six problems, using only 2.1 and Module 1.</li>
+              <li>Split and score a real dataset, tell features from labels, diagnose an overfit gap, and reason about a metric on imbalanced data.</li>
+              <li>Details in the micro-assignment folder.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Next: class 2.2, How models learn</div>
+            <ul>
+              <li>What "the model learns" actually means.</li>
+              <li>Loss, the gradient, and the downhill step.</li>
+              <li>The training loop, decoded line by line.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+      primaryColor: '#ffffff', primaryTextColor: '#172033', primaryBorderColor: '#2563eb',
+      lineColor: '#2563eb', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', fontSize: '16px' },
+    flowchart: { nodeSpacing: 45, rankSpacing: 50, htmlLabels: true } });
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', width: 1280, height: 720,
+    margin: 0, center: false, transition: 'slide', plugins: [ RevealHighlight, RevealNotes ]
+  }).then(function () {
+    if (window.mermaid) { mermaid.run(); }
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        { left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false } ], throwOnError: false });
+    }
+  });
+</script>
+</body>
+</html>

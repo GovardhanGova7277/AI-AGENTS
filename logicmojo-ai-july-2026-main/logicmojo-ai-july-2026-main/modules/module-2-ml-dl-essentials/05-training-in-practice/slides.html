@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class 2.5 - Training in practice</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="../../../assets/theme.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="deck-footer">GenAI and Agentic AI &middot; Module 2 &middot; Class 2.5</div>
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section class="title" data-background-gradient="linear-gradient(120deg, #1e3a8a 0%, #3730a3 55%, #312e81 100%)">
+      <span class="kicker">Module 2 &middot; ML and DL essentials &middot; Class 2.5</span>
+      <h1>Training in practice</h1>
+      <p class="lead">Turn the toy loop into a real workflow: batches, epochs, an honest evaluation, curves you read, a GPU, and a saved model.</p>
+    </section>
+
+    <!-- 2. Today's road -->
+    <section>
+      <h2><span class="eyebrow">Today</span>The road for this class</h2>
+      <div class="body">
+        <div class="path-layout">
+          <div class="journey">
+            <div class="step"><div class="step-num">1</div><div><div class="step-title">Batches and epochs<span class="step-note">Feed the model small groups; sweep the data many times.</span></div></div></div>
+            <div class="step"><div class="step-num">2</div><div><div class="step-title">Honest evaluation<span class="step-note">Score on held-out data with learning turned off.</span></div></div></div>
+            <div class="step"><div class="step-num">3</div><div><div class="step-title">Learning curves<span class="step-note">Read overfitting as it starts, and hold it back.</span></div></div></div>
+            <div class="step"><div class="step-num">4</div><div><div class="step-title">Device and reproducibility<span class="step-note">Run on a GPU; fix a seed so runs repeat.</span></div></div></div>
+            <div class="step"><div class="step-num">5</div><div><div class="step-title">Save, load, and the bridge<span class="step-note">Persist the weights; inner layers as a representation.</span></div></div></div>
+          </div>
+          <div class="practice">
+            <div class="col-label">Why this matters</div>
+            <div class="pill"><span class="pill-tag">The loop, made real</span>You have the five-line loop from class 2.4 (PyTorch fundamentals). Real training wraps it in the machinery that makes it fast, honest, and reusable.</div>
+            <div class="pill"><span class="pill-tag">Reused later</span>The device, seed, and save/load habits return for QLoRA fine-tuning in class 4.10 (Fine-tuning II) and deployment in Module 6 (Agentic AI).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Why batches -->
+    <section>
+      <h2><span class="eyebrow">Batching</span>Feed the model small groups</h2>
+      <div class="body">
+        <p class="stmt">Real datasets do not fit in memory at once, and one example at a time is noisy. We feed small groups called batches, handed out one at a time until the data is used up.</p>
+        <div class="figure-wrap">
+          <svg viewBox="0 0 660 150" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:230px">
+            <g fill="#eef4ff" stroke="#93a7d8" stroke-width="1">
+              <rect x="40" y="60" width="22" height="22" rx="3"/><rect x="66" y="60" width="22" height="22" rx="3"/><rect x="92" y="60" width="22" height="22" rx="3"/><rect x="118" y="60" width="22" height="22" rx="3"/><rect x="144" y="60" width="22" height="22" rx="3"/><rect x="170" y="60" width="22" height="22" rx="3"/>
+              <rect x="226" y="60" width="22" height="22" rx="3"/><rect x="252" y="60" width="22" height="22" rx="3"/><rect x="278" y="60" width="22" height="22" rx="3"/><rect x="304" y="60" width="22" height="22" rx="3"/><rect x="330" y="60" width="22" height="22" rx="3"/><rect x="356" y="60" width="22" height="22" rx="3"/>
+              <rect x="412" y="60" width="22" height="22" rx="3"/><rect x="438" y="60" width="22" height="22" rx="3"/><rect x="464" y="60" width="22" height="22" rx="3"/><rect x="490" y="60" width="22" height="22" rx="3"/><rect x="516" y="60" width="22" height="22" rx="3"/><rect x="542" y="60" width="22" height="22" rx="3"/>
+            </g>
+            <rect y="56" width="156" height="30" rx="5" fill="#2563eb" fill-opacity="0.14" stroke="#2563eb" stroke-width="2">
+              <animate attributeName="x" values="38;224;410;38" keyTimes="0;0.34;0.67;1" calcMode="discrete" dur="2.4s" repeatCount="indefinite"/>
+            </rect>
+            <text x="118" y="108" text-anchor="middle" font-size="13" fill="#3f4a63">batch 1</text>
+            <text x="304" y="108" text-anchor="middle" font-size="13" fill="#3f4a63">batch 2</text>
+            <text x="490" y="108" text-anchor="middle" font-size="13" fill="#3f4a63">batch 3</text>
+            <text x="40" y="44" font-size="13" fill="#3f4a63">the training set, split into batches</text>
+          </svg>
+        </div>
+        <div class="callout"><span class="label">Batch size is a real knob</span>Bigger batches are steadier but need more memory; smaller ones are noisier but lighter. It trades memory, speed, and stability.</div>
+      </div>
+    </section>
+
+    <!-- 4. DataLoader -->
+    <section>
+      <h2><span class="eyebrow">Batching</span>A DataLoader hands out batches</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">from torch.utils.data import TensorDataset, DataLoader
+
+ds = TensorDataset(X, y)
+loader = DataLoader(ds, batch_size=32, shuffle=True)
+
+for xb, yb in loader:
+    print(xb.shape)     # torch.Size([32, ...])
+    break</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Wrap tensors in a <code>TensorDataset</code>.</li>
+              <li>A <code>DataLoader</code> yields shuffled batches.</li>
+              <li>You loop over it instead of the whole dataset at once.</li>
+              <li>Shuffling each epoch keeps the model from learning the order.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Epochs -->
+    <section>
+      <h2><span class="eyebrow">Epochs</span>One pass, repeated</h2>
+      <div class="body">
+        <p class="stmt">One epoch is one full sweep over the training data, batch by batch. You usually run several.</p>
+        <div class="analogy"><span class="label">Think of it as</span>Re-reading a textbook. One pass rarely sticks; a few passes settle the material. Too many, though, and you start memorizing the exact words rather than the ideas, which is overfitting.</div>
+      </div>
+    </section>
+
+    <!-- 6. Eval pass -->
+    <section>
+      <h2><span class="eyebrow">Evaluation</span>Score with learning turned off</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">model.eval()
+with torch.no_grad():
+    preds = model(X_val)
+    acc = (preds.argmax(1) == y_val).float().mean()
+model.train()</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>model.eval()</code> switches layers like dropout to scoring mode.</li>
+              <li><code>torch.no_grad()</code> skips gradient tracking: faster, and no accidental learning.</li>
+              <li>This is the generalization check from class 2.1 (What is machine learning), in code.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Learning curves -->
+    <section>
+      <h2><span class="eyebrow">Learning curves</span>Plot train and validation loss</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:420px">
+            <rect x="305" y="40" width="225" height="200" fill="#2563eb" opacity="0.05"/>
+            <line x1="60" y1="240" x2="530" y2="240" stroke="#6b7793" stroke-width="1.5"/>
+            <line x1="60" y1="40" x2="60" y2="240" stroke="#6b7793" stroke-width="1.5"/>
+            <text x="295" y="276" text-anchor="middle" class="axlbl">epochs</text>
+            <text x="28" y="140" text-anchor="middle" class="axlbl" transform="rotate(-90 28 140)">loss</text>
+            <path d="M70,72 C180,150 330,202 520,220" fill="none" stroke="#2563eb" stroke-width="3"/>
+            <path d="M70,90 C200,176 305,180 520,118" fill="none" stroke="#b45309" stroke-width="3"/>
+            <circle cx="305" cy="180" r="5" fill="#15803d"/>
+            <line x1="305" y1="180" x2="305" y2="240" stroke="#15803d" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <text x="298" y="208" text-anchor="end" class="zone" fill="#15803d">stop here</text>
+            <text x="418" y="62" text-anchor="middle" class="zone">overfitting</text>
+            <rect x="80" y="200" width="16" height="4" fill="#2563eb"/><text x="102" y="205" class="leg">train loss</text>
+            <rect x="80" y="222" width="16" height="4" fill="#b45309"/><text x="102" y="227" class="leg">validation loss</text>
+          </svg>
+        </div>
+        <p class="stmt" style="margin-top:2px">Record both each epoch. While both fall, the model is learning. That is the class 2.1 (What is machine learning) gap, watched live.</p>
+      </div>
+    </section>
+
+    <!-- 8. Reading overfitting -->
+    <section>
+      <h2><span class="eyebrow">Learning curves</span>Read the moment it turns</h2>
+      <div class="body">
+        <p class="stmt">When validation loss turns up while training loss keeps falling, overfitting has started.</p>
+        <div class="callout"><span class="label">The signal</span>The gap between the two curves widening is the tell. The best model is the one from the epoch where validation loss was lowest, not the last epoch.</div>
+      </div>
+    </section>
+
+    <!-- 8b. Batch normalization -->
+    <section>
+      <h2><span class="eyebrow">Stability</span>Batch normalization steadies training</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">As training shifts the weights, the numbers flowing into each layer drift in scale, which slows learning. Batch normalization re-centers each layer's pre-activations across the batch, then rescales them with two learned numbers.</p>
+        <div class="cols cols-2" style="align-items:center">
+          <div class="card">
+            <div class="col-label">The formula, decoded</div>
+            <p class="stmt" style="margin:2px 0 6px">$$ \hat{x} = \frac{x - \mu}{\sqrt{\sigma^2 + \epsilon}}, \qquad y = \gamma\,\hat{x} + \beta $$</p>
+            <ul class="tight">
+              <li>\( \mu,\ \sigma^2 \): the mean and variance of \( x \) over the current batch.</li>
+              <li>\( \hat{x} \): \( x \) recentered to mean 0, variance 1.</li>
+              <li>\( \epsilon \): a tiny constant so the divide is never by zero.</li>
+              <li>\( \gamma,\ \beta \): a learned scale and shift, so the layer can undo the normalization if that helps.</li>
+            </ul>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 300 230" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:250px">
+              <text x="150" y="20" text-anchor="middle" font-size="13" fill="#3f4a63">before: drifted and wide</text>
+              <line x1="20" y1="55" x2="280" y2="55" stroke="#6b7793"/>
+              <g fill="#c2621f"><circle cx="150" cy="55" r="5"/><circle cx="175" cy="55" r="5"/><circle cx="200" cy="55" r="5"/><circle cx="225" cy="55" r="5"/><circle cx="250" cy="55" r="5"/><circle cx="190" cy="55" r="5"/></g>
+              <line x1="150" y1="120" x2="150" y2="200" stroke="#93a7d8" stroke-dasharray="4 3"/><text x="150" y="215" text-anchor="middle" font-size="12" fill="#3f4a63">0</text>
+              <text x="150" y="150" text-anchor="middle" font-size="13" fill="#3f4a63">after: centered, unit scale</text>
+              <line x1="20" y1="185" x2="280" y2="185" stroke="#6b7793"/>
+              <g fill="#2563eb"><circle cx="132" cy="185" r="5"/><circle cx="145" cy="185" r="5"/><circle cx="150" cy="185" r="5"/><circle cx="158" cy="185" r="5"/><circle cx="168" cy="185" r="5"/><circle cx="140" cy="185" r="5"/></g>
+            </svg>
+          </div>
+        </div>
+        <div class="callout"><span class="label">Why it helps, and the mode switch</span>Centered inputs let you train faster and at a higher learning rate, with a mild regularizing effect. In PyTorch it is <code>nn.BatchNorm1d(width)</code>. Like dropout, it behaves differently in <code>train()</code> (batch statistics) and <code>eval()</code> (running averages), which is the other reason you switch modes.</div>
+      </div>
+    </section>
+
+    <!-- 9. Controlling overfitting -->
+    <section>
+      <h2><span class="eyebrow">Control</span>Three ways to hold overfitting back</h2>
+      <div class="body">
+        <div class="split-row">
+          <div class="split-box"><div class="col-label">Early stopping</div><p>Keep the model from the epoch with the best validation loss, not the last.</p></div>
+          <div class="split-box"><div class="col-label">Weight decay</div><p>A gentle penalty on large weights (the optimizer's <code>weight_decay</code>) that discourages memorizing.</p></div>
+          <div class="split-box"><div class="col-label">Dropout</div><p>In training, zero each activation with probability <code>p</code> (often 0.2 to 0.5) so no single path is leaned on.</p></div>
+        </div>
+        <div class="cols cols-2" style="align-items:center">
+          <div class="figure-wrap">
+            <svg viewBox="0 0 300 230" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:250px">
+              <text x="75" y="22" text-anchor="middle" class="leg" font-weight="700">train()</text>
+              <circle cx="75" cy="58" r="16" fill="#2563eb"/><circle cx="75" cy="104" r="16" fill="#cbd3e6"/><circle cx="75" cy="150" r="16" fill="#2563eb"/><circle cx="75" cy="196" r="16" fill="#cbd3e6"/>
+              <g stroke="#a32d2d" stroke-width="2.5"><line x1="65" y1="94" x2="85" y2="114"/><line x1="85" y1="94" x2="65" y2="114"/><line x1="65" y1="186" x2="85" y2="206"/><line x1="85" y1="186" x2="65" y2="206"/></g>
+              <text x="225" y="22" text-anchor="middle" class="leg" font-weight="700">eval()</text>
+              <g fill="#2563eb"><circle cx="225" cy="58" r="16"/><circle cx="225" cy="104" r="16"/><circle cx="225" cy="150" r="16"/><circle cx="225" cy="196" r="16"/></g>
+              <text x="150" y="150" text-anchor="middle" font-size="12.5" fill="#a32d2d" font-weight="700">p = 0.5</text>
+              <text x="150" y="168" text-anchor="middle" font-size="11" fill="#6b7793">(dropped)</text>
+              <text x="150" y="196" text-anchor="middle" font-size="11" fill="#3f4a63">all kept</text>
+            </svg>
+          </div>
+          <div class="callout"><span class="label">Why the mode switch matters</span>In <code>train()</code> dropout zeroes activations (here <code>p = 0.5</code>); in <code>eval()</code> it is off, so every neuron contributes at scoring time. That is why you call <code>model.eval()</code> first.</div>
+        </div>
+        <div class="callout"><span class="label">Batch norm and dropout together?</span>Both fight overfitting, so it is tempting to stack them, but they can interfere. Batch norm measures the mean and variance of a layer's activations; dropout randomly zeroes some of those activations, which changes that variance during training. At scoring time dropout switches off, so the numbers no longer match what batch norm expected. The safe rule: reach for one first. Networks with batch norm often need little or no dropout. If you want both, place dropout after the batch-norm layer, never before it.</div>
+      </div>
+    </section>
+
+    <!-- 10. Device -->
+    <section>
+      <h2><span class="eyebrow">Hardware</span>Run on a GPU when there is one</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">device = "cuda" if torch.cuda.is_available() else "cpu"
+model = model.to(device)
+xb = xb.to(device)</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>torch.cuda.is_available()</code> checks for a GPU.</li>
+              <li><code>.to(device)</code> moves the model and the data there.</li>
+              <li>Default path for this course: Colab's free T4. A local NVIDIA setup is an optional aside; no one is blocked without a GPU.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Same-device trap -->
+    <section>
+      <h2><span class="eyebrow">Hardware</span>The same-device trap</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">Every tensor in an operation must live on the same device. Move the model to the GPU but leave the batch on the CPU and PyTorch stops with an error.</p>
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <div class="code-lg">
+              <pre><code data-trim class="language-python">model = model.to("cuda")   # model on GPU
+pred  = model(xb)          # xb still on CPU
+# RuntimeError: Expected all tensors to be
+# on the same device
+
+# Fix: move each batch too, inside the loop
+for xb, yb in loader:
+    xb, yb = xb.to(device), yb.to(device)</code></pre>
+            </div>
+            <div class="callout" style="margin-top:10px"><span class="label">The fix</span>Send every batch to the device inside the loop, not just the model once at the start.</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 300 230" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:300px" font-family="Segoe UI, Arial, sans-serif">
+              <rect x="30" y="30" width="120" height="64" rx="8" fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"/><text x="90" y="58" text-anchor="middle" font-size="14" font-weight="600" fill="#172033">model</text><text x="90" y="78" text-anchor="middle" font-size="13" fill="#3f4a63">on GPU</text>
+              <rect x="150" y="140" width="120" height="64" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="210" y="168" text-anchor="middle" font-size="14" font-weight="600" fill="#172033">batch</text><text x="210" y="188" text-anchor="middle" font-size="13" fill="#3f4a63">on CPU</text>
+              <line x1="150" y1="94" x2="150" y2="140" stroke="#a32d2d" stroke-width="2.5" stroke-dasharray="6 4"/>
+              <g stroke="#a32d2d" stroke-width="3"><line x1="140" y1="107" x2="160" y2="127"/><line x1="160" y1="107" x2="140" y2="127"/></g>
+              <text x="235" y="112" text-anchor="middle" font-size="13" fill="#a32d2d" font-weight="700">different</text>
+              <text x="235" y="130" text-anchor="middle" font-size="13" fill="#a32d2d" font-weight="700">devices</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. Reproducibility -->
+    <section>
+      <h2><span class="eyebrow">Reproducibility</span>Fix the seed</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">torch.manual_seed(0)
+# now weight init and shuffling repeat run to run</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Training uses randomness: weight initialization, batch shuffling.</li>
+              <li>A fixed seed makes a run repeatable, so a result you got yesterday returns today.</li>
+              <li>Essential when you are comparing two changes.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Save/load -->
+    <section>
+      <h2><span class="eyebrow">Persistence</span>Save and reload the weights</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">torch.save(model.state_dict(), "model.pt")
+
+fresh = Net()
+fresh.load_state_dict(torch.load("model.pt"))
+fresh.eval()</code></pre>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 240 210" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+              <defs><marker id="ars" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+              <rect x="70" y="18" width="100" height="40" rx="8" fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"/><text x="120" y="43" text-anchor="middle" class="leg" fill="#172033">trained Net</text>
+              <line x1="120" y1="58" x2="120" y2="84" stroke="#6b7793" stroke-width="1.5" marker-end="url(#ars)"/><text x="128" y="76" class="leg">state_dict</text>
+              <rect x="80" y="86" width="80" height="46" rx="4" fill="#f1f4fc" stroke="#93a7d8" stroke-width="1.5"/><text x="120" y="113" text-anchor="middle" class="leg" fill="#172033">model.pt</text>
+              <line x1="120" y1="132" x2="120" y2="158" stroke="#6b7793" stroke-width="1.5" marker-end="url(#ars)"/><text x="128" y="150" class="leg">load</text>
+              <rect x="70" y="160" width="100" height="40" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="120" y="185" text-anchor="middle" class="leg" fill="#172033">fresh Net</text>
+            </svg>
+          </div>
+        </div>
+        <div class="callout"><span class="label">What state_dict holds</span>The learned numbers: every weight and bias. Save it so you do not retrain each time, then load it into a model of the same shape to reuse.</div>
+      </div>
+    </section>
+
+    <!-- 14. state_dict caveat -->
+    <section>
+      <h2><span class="eyebrow">Persistence</span>state_dict saves numbers, not code</h2>
+      <div class="body">
+        <p class="stmt">Saving the state dict does not save the model class.</p>
+        <div class="callout"><span class="label">The gotcha</span>You still need the <code>Net</code> definition in your code to load the numbers into. Keep the class and the weights together.</div>
+      </div>
+    </section>
+
+    <!-- 15. Representation bridge -->
+    <section>
+      <h2><span class="eyebrow">The bridge</span>Inner layers are a learned representation</h2>
+      <div class="body">
+        <p class="stmt">The numbers a trained network produces in its inner layers are a <strong>representation</strong>: a vector that captures something meaningful about the input.</p>
+        <div class="figure-wrap">
+          <svg viewBox="0 0 640 160" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:230px">
+            <defs><marker id="arb" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+            <rect x="20" y="55" width="90" height="50" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="65" y="85" text-anchor="middle" font-size="14" font-weight="600" fill="#172033">input</text>
+            <line x1="110" y1="80" x2="150" y2="80" stroke="#6b7793" stroke-width="1.5" marker-end="url(#arb)"/>
+            <rect x="152" y="48" width="120" height="64" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/><text x="212" y="76" text-anchor="middle" font-size="14" font-weight="600" fill="#172033">network</text><text x="212" y="95" text-anchor="middle" font-size="13" fill="#3f4a63">hidden layers</text>
+            <line x1="272" y1="80" x2="312" y2="80" stroke="#6b7793" stroke-width="1.5" marker-end="url(#arb)"/>
+            <g>
+              <rect x="316" y="62" width="34" height="36" fill="#c7e9b0" stroke="#4f9a2f"/><rect x="350" y="62" width="34" height="36" fill="#c7e9b0" stroke="#4f9a2f"/><rect x="384" y="62" width="34" height="36" fill="#c7e9b0" stroke="#4f9a2f"/><rect x="418" y="62" width="34" height="36" fill="#c7e9b0" stroke="#4f9a2f"/>
+              <text x="333" y="85" text-anchor="middle" font-size="12" fill="#3f4a63">0.8</text><text x="367" y="85" text-anchor="middle" font-size="12" fill="#3f4a63">-1.2</text><text x="401" y="85" text-anchor="middle" font-size="12" fill="#3f4a63">0.3</text><text x="435" y="85" text-anchor="middle" font-size="12" fill="#3f4a63">1.5</text>
+            </g>
+            <text x="384" y="120" text-anchor="middle" font-size="13" fill="#3f4a63">representation (a vector)</text>
+            <line x1="452" y1="80" x2="492" y2="80" stroke="#6b7793" stroke-width="1.5" marker-end="url(#arb)"/>
+            <rect x="494" y="55" width="130" height="50" rx="8" fill="#eef4ff" stroke="#2563eb" stroke-width="1.5"/><text x="559" y="79" text-anchor="middle" font-size="13" fill="#172033">embeddings, NLP</text><text x="559" y="96" text-anchor="middle" font-size="12" fill="#3f4a63">(Module 3)</text>
+          </svg>
+        </div>
+        <div class="callout"><span class="label">Where this goes</span>Meaning as a vector is exactly what powers embeddings and NLP in Module 3 (NLP to Transformers). You have now built the machine that produces them.</div>
+      </div>
+    </section>
+
+    <!-- 16. Build -->
+    <section>
+      <h2><span class="eyebrow">Build</span>A full train, validate, and save</h2>
+      <div class="body">
+        <p class="lead">In the notebook you train on the digits with a DataLoader, track training and validation loss, plot both curves, stop at the best validation epoch, run a GPU pass when one is available, report an honest test accuracy, and save the model with its state dict.</p>
+        <div class="callout"><span class="label">The habit to build</span>Split three ways, watch the curves, keep the best epoch, and report the test number only once.</div>
+      </div>
+    </section>
+
+    <!-- 17. Wrap -->
+    <section>
+      <h2><span class="eyebrow">Wrap up</span>Your turn, and the module milestone</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Micro-assignment</div>
+            <ul>
+              <li>Six problems: DataLoader, train and eval, save and load, and reading a curve.</li>
+              <li>Details in the micro-assignment folder.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Module 2 milestone</div>
+            <ul>
+              <li>Train, validate, and save a network on a real tabular dataset.</li>
+              <li>Plot the curves and name where it overfits.</li>
+              <li>The full workflow, end to end.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+      primaryColor: '#ffffff', primaryTextColor: '#172033', primaryBorderColor: '#2563eb',
+      lineColor: '#2563eb', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', fontSize: '16px' },
+    flowchart: { nodeSpacing: 45, rankSpacing: 50, htmlLabels: true } });
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', width: 1280, height: 720,
+    margin: 0, center: false, transition: 'slide', plugins: [ RevealHighlight, RevealNotes ]
+  }).then(function () {
+    if (window.mermaid) { mermaid.run(); }
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        { left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false } ], throwOnError: false });
+    }
+  });
+</script>
+</body>
+</html>

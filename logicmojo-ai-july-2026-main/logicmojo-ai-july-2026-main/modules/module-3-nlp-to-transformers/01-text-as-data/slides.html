@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class 3.1 - Text as data</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="../../../assets/theme.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="deck-footer">GenAI and Agentic AI &middot; Module 3 &middot; Class 3.1</div>
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section class="title" data-background-gradient="linear-gradient(120deg, #1e3a8a 0%, #3730a3 55%, #312e81 100%)">
+      <span class="kicker">Module 3 &middot; NLP to Transformers &middot; Class 3.1</span>
+      <h1>Text as data</h1>
+      <p class="lead">A model eats numbers, not words. Turn text into tokens, tokens into vectors that carry meaning, and see why a new mechanism, attention, was needed.</p>
+    </section>
+
+    <!-- 2. Roadmap -->
+    <section>
+      <h2><span class="eyebrow">Today</span>The road for this class</h2>
+      <div class="body">
+        <div class="path-layout">
+          <div class="journey">
+            <div class="step"><div class="step-num">1</div><div><div class="step-title">Tokens<span class="step-note">Text is split into pieces of words, not whole words.</span></div></div></div>
+            <div class="step"><div class="step-num">2</div><div><div class="step-title">Tokens to numbers<span class="step-note">Each token gets an id; the naive vector, then the embedding.</span></div></div></div>
+            <div class="step"><div class="step-num">3</div><div><div class="step-title">Meaning as a vector<span class="step-note">Embeddings and word2vec, the ancestor idea.</span></div></div></div>
+            <div class="step"><div class="step-num">4</div><div><div class="step-title">Why attention was needed<span class="step-note">Meet RNNs and LSTMs, and the two limits that motivated attention.</span></div></div></div>
+          </div>
+          <div class="practice">
+            <div class="col-label">Why this matters</div>
+            <div class="pill"><span class="pill-tag">The on-ramp</span>Everything a language model does begins here: text becomes numbers it can process.</div>
+            <div class="pill"><span class="pill-tag">Builds to</span>The need this class raises is answered by attention in class 3.2 (Attention) and the transformer in class 3.3 (The Transformer).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. The problem -->
+    <section>
+      <h2><span class="eyebrow">The problem</span>Text is not numbers</h2>
+      <div class="body">
+        <p class="stmt">Every model in Module 2 (ML and DL essentials) ate numbers: vectors in, a prediction out. Text is symbols. So the first job is a faithful way to turn words into numbers.</p>
+        <div class="callout"><span class="label">Two steps</span>First split the text into <strong>tokens</strong>, then map each token to a <strong>vector</strong>. Get this right and the rest of NLP is the machinery from Module 2 (ML and DL essentials), at scale.</div>
+      </div>
+    </section>
+
+    <!-- 4. Tokens: Lego -->
+    <section>
+      <h2><span class="eyebrow">Tokens</span>Models read pieces of words</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">A token is a chunk of text: often a whole common word, sometimes a piece of a rarer one.</p>
+            <div class="analogy" style="margin-top:12px"><span class="label">Think of it as</span>Lego. Common shapes are a single brick; unusual shapes are built from smaller bricks. A tokenizer keeps frequent words whole and breaks rare ones into reusable pieces.</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 360 220" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+              <defs><marker id="atk" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+              <text x="180" y="44" text-anchor="middle" font-size="18" fill="#172033">"unbelievable"</text>
+              <line x1="180" y1="58" x2="180" y2="90" stroke="#6b7793" stroke-width="1.5" marker-end="url(#atk)"/>
+              <rect x="40" y="100" width="78" height="48" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="79" y="130" text-anchor="middle" font-size="17" fill="#172033">un</text>
+              <rect x="128" y="100" width="104" height="48" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="180" y="130" text-anchor="middle" font-size="17" fill="#172033">believ</text>
+              <rect x="242" y="100" width="78" height="48" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="281" y="130" text-anchor="middle" font-size="17" fill="#172033">able</text>
+              <text x="180" y="184" text-anchor="middle" font-size="14" fill="#3f4a63">one rare word, three reusable pieces</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. See a real tokenization: two tokenizers, two marker conventions (NEW) -->
+    <section>
+      <h2><span class="eyebrow">Tokens</span>Two tokenizers, two ways to mark the pieces</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">Run <code>"I love tokenization!"</code> through two tokenizers. Both break the rare word into pieces, but they flag those pieces differently.</p>
+        <div class="figure-wrap">
+          <svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:320px" font-family="Segoe UI, Arial, sans-serif">
+            <text x="20" y="34" font-size="13" fill="#3f4a63" font-weight="700">WordPiece (BERT-style): a continuation is marked with ##</text>
+            <g>
+              <rect x="20"  y="46" width="64"  height="46" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="52"  y="75" text-anchor="middle" font-size="16" fill="#172033">I</text>
+              <rect x="94"  y="46" width="110" height="46" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="149" y="75" text-anchor="middle" font-size="16" fill="#172033">love</text>
+              <rect x="214" y="46" width="120" height="46" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/><text x="274" y="75" text-anchor="middle" font-size="16" fill="#172033">token</text>
+              <rect x="344" y="46" width="160" height="46" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/><text x="424" y="75" text-anchor="middle" font-size="16" fill="#c2621f" font-weight="700">##ization</text>
+              <rect x="514" y="46" width="54"  height="46" rx="8" fill="#fbe4e4" stroke="#a32d2d" stroke-width="1.5"/><text x="541" y="75" text-anchor="middle" font-size="16" fill="#172033">!</text>
+            </g>
+            <text x="20" y="170" font-size="13" fill="#3f4a63" font-weight="700">BPE (GPT-style): a word start is marked with a leading-space symbol &#9601;</text>
+            <g>
+              <rect x="20"  y="182" width="64"  height="46" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="52"  y="211" text-anchor="middle" font-size="16" fill="#172033">I</text>
+              <rect x="94"  y="182" width="110" height="46" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="149" y="211" text-anchor="middle" font-size="16" fill="#172033">&#9601;love</text>
+              <rect x="214" y="182" width="120" height="46" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/><text x="274" y="211" text-anchor="middle" font-size="16" fill="#172033">&#9601;token</text>
+              <rect x="344" y="182" width="160" height="46" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/><text x="424" y="211" text-anchor="middle" font-size="16" fill="#172033">ization</text>
+              <rect x="514" y="182" width="54"  height="46" rx="8" fill="#fbe4e4" stroke="#a32d2d" stroke-width="1.5"/><text x="541" y="211" text-anchor="middle" font-size="16" fill="#172033">!</text>
+            </g>
+            <text x="294" y="266" text-anchor="middle" font-size="12.5" fill="#b45309">"tokenization" splits into two pieces either way</text>
+          </svg>
+        </div>
+        <div class="callout"><span class="label">Same idea, two conventions</span>WordPiece flags a piece that <strong>continues</strong> the previous token with <code>##</code>; BPE flags a piece that <strong>starts a new word</strong> with a leading-space symbol, shown here as <code>&#9601;</code> (GPT-2 writes the same thing as <code>&#288;</code>). Either way the output is a list of integer ids, and the two tokenizers can split the same word differently. Keeping the space makes the split reversible: glue the tokens back and you recover the exact text.</div>
+      </div>
+    </section>
+
+    <!-- 5b. Corpus and vocabulary (NEW) -->
+    <section>
+      <h2><span class="eyebrow">Foundations</span>Corpus and vocabulary</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">Two words you will hear constantly in NLP:</p>
+            <ul class="tight">
+              <li><strong>Corpus</strong>: the whole body of text a model learns from, such as books, web pages, and code.</li>
+              <li><strong>Vocabulary</strong>: the fixed set of tokens the tokenizer knows, each with an id. It is built once from the corpus.</li>
+            </ul>
+            <div class="callout" style="margin-top:8px"><span class="label">Why it matters</span>Everything downstream is sized by the vocabulary: a one-hot vector is as long as the vocabulary, and the embedding table has exactly one row per vocabulary token.</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 320 230" xmlns="http://www.w3.org/2000/svg" style="width:100%" font-family="Segoe UI, Arial, sans-serif">
+              <defs><marker id="acv" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+              <g fill="#eef4ff" stroke="#93a7d8" stroke-width="1.3">
+                <rect x="24" y="66" width="70" height="88" rx="6"/><rect x="16" y="58" width="70" height="88" rx="6"/><rect x="8" y="50" width="70" height="88" rx="6"/>
+              </g>
+              <g stroke="#c3d0ee" stroke-width="1.3"><line x1="18" y1="66" x2="68" y2="66"/><line x1="18" y1="78" x2="68" y2="78"/><line x1="18" y1="90" x2="68" y2="90"/><line x1="18" y1="102" x2="60" y2="102"/></g>
+              <text x="43" y="176" text-anchor="middle" font-size="12" fill="#3f4a63">corpus</text>
+              <line x1="90" y1="96" x2="128" y2="96" stroke="#6b7793" stroke-width="1.5" marker-end="url(#acv)"/><text x="109" y="86" text-anchor="middle" font-size="10.5" fill="#6b7793">tokenize</text>
+              <rect x="132" y="34" width="176" height="150" rx="8" fill="#fff" stroke="#d99a00" stroke-width="1.5"/>
+              <text x="220" y="54" text-anchor="middle" font-size="12" fill="#172033" font-weight="700">vocabulary</text>
+              <g font-size="12" fill="#172033"><text x="150" y="78">the</text><text x="150" y="98">cat</text><text x="150" y="118">sat</text><text x="150" y="138">##ing</text><text x="150" y="158">...</text></g>
+              <g font-size="12" fill="#3f6fd0" text-anchor="end"><text x="292" y="78">0</text><text x="292" y="98">1</text><text x="292" y="118">2</text><text x="292" y="138">3</text></g>
+              <text x="220" y="204" text-anchor="middle" font-size="11" fill="#3f4a63">V tokens (often 30k to 50k)</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. BPE step by step (REBUILT) -->
+    <section>
+      <h2><span class="eyebrow">Tokens</span>Byte-pair encoding, step by step</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">Start from single characters, then repeatedly merge the most frequent adjacent pair into one token. On a corpus with many words ending in "est", the merges fall out like this:</p>
+        <div class="grid-table" style="grid-template-columns: 0.7fr 1.5fr 1fr 1.6fr">
+          <div class="gt-head">Merge</div><div class="gt-head">Most frequent pair</div><div class="gt-head">New token</div><div class="gt-head">Now appears in</div>
+          <div class="gt-accent">1</div><div>e + s</div><div>es</div><div>new<strong>es</strong>t, wid<strong>es</strong>t</div>
+          <div class="gt-accent">2</div><div>es + t</div><div>est</div><div>new<strong>est</strong>, wid<strong>est</strong></div>
+          <div class="gt-accent">3</div><div>l + o</div><div>lo</div><div><strong>lo</strong>w, <strong>lo</strong>wer</div>
+        </div>
+        <div class="callout"><span class="label">Why it works</span>Frequent patterns earn their own token, so common words end up whole. Anything unseen still tokenizes into smaller known pieces, so no word is ever out of vocabulary. A novel "lowest" would split into <code>lo</code>, <code>w</code>, <code>est</code>.</div>
+        <div class="callout" style="margin-top:8px"><span class="label">No cutoff frequency</span>Each step merges the single most frequent pair, whatever its count. There is no threshold. You repeat this thousands of times, the three above are just the start, and stop once the vocabulary reaches a target size you pick (often 30k to 50k).</div>
+      </div>
+    </section>
+
+    <!-- 6b. Applying BPE to a new word (encode) -->
+    <section>
+      <h2><span class="eyebrow">Tokens</span>Applying the rules: encode a new word</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">Training built the rulebook. To tokenize a <strong>new</strong> word, start from its characters and apply the learned merges in the order they were learned, highest priority first, until no rule matches. Take <code>slowest</code> with the three merges from the previous slide:</p>
+        <div class="grid-table" style="grid-template-columns: 0.6fr 1.4fr 2fr">
+          <div class="gt-head">Step</div><div class="gt-head">Rule applied</div><div class="gt-head">Sequence</div>
+          <div class="gt-accent">start</div><div>characters</div><div>s &middot; l &middot; o &middot; w &middot; e &middot; s &middot; t</div>
+          <div class="gt-accent">1</div><div>e + s &rarr; es</div><div>s &middot; l &middot; o &middot; w &middot; <strong>es</strong> &middot; t</div>
+          <div class="gt-accent">2</div><div>es + t &rarr; est</div><div>s &middot; l &middot; o &middot; w &middot; <strong>est</strong></div>
+          <div class="gt-accent">3</div><div>l + o &rarr; lo</div><div>s &middot; <strong>lo</strong> &middot; w &middot; est</div>
+        </div>
+        <div class="callout"><span class="label">The rule</span>Apply the merges in learned (priority) order, not by scanning for the longest piece. A character with no matching rule, here <code>s</code> and <code>w</code>, simply stays its own token. Characters are the floor, so a word never seen in training still tokenizes and is never out of vocabulary.</div>
+        <div class="callout" style="margin-top:8px"><span class="label">Result</span><code>slowest</code> becomes <code>s &middot; lo &middot; w &middot; est</code>, four tokens. There is no <code>low</code> token because no rule ever creates one; the tokenizer can only build the pieces its merges define.</div>
+      </div>
+    </section>
+
+    <!-- 7. one word != one token (ENRICHED) -->
+    <section>
+      <h2><span class="eyebrow">Tokens</span>One word is not one token</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">Token count and word count differ, and a leading space or a capital can change the split. Some concrete counts:</p>
+        <div class="grid-table" style="grid-template-columns: 1.6fr 2fr 0.7fr">
+          <div class="gt-head">Text</div><div class="gt-head">Tokens</div><div class="gt-head">Count</div>
+          <div>cat</div><div>cat</div><div class="gt-accent">1</div>
+          <div>unbelievable</div><div>un &middot; believ &middot; able</div><div class="gt-accent">3</div>
+          <div>antidisestablishmentarianism</div><div>anti &middot; dis &middot; establish &middot; ment &middot; ...</div><div class="gt-accent">7+</div>
+          <div>def add(x):</div><div>def &middot; &#183;add &middot; ( &middot; x &middot; ):</div><div class="gt-accent">5</div>
+        </div>
+        <div class="callout"><span class="label">Why you care</span>Model cost and the context limit are counted in <strong>tokens</strong>, not words. That is why a prompt's length is measured in tokens, a theme that returns in class 3.5 (From models to LLMs) and class 4.1 (Working with LLMs).</div>
+      </div>
+    </section>
+
+    <!-- 8. Preprocessing -->
+    <section>
+      <h2><span class="eyebrow">Preprocessing</span>The practical bits</h2>
+      <div class="body">
+        <div class="cols cols-3">
+          <div class="card"><div class="col-label">Normalize</div><ul class="tight"><li>Lowercasing (sometimes), consistent whitespace and punctuation.</li><li>Keeps the vocabulary from splitting on trivia.</li></ul></div>
+          <div class="card"><div class="col-label">Special tokens</div><ul class="tight"><li>Start, end, and padding markers.</li><li>They tell the model where a sequence begins, ends, and where filler sits.</li></ul></div>
+          <div class="card"><div class="col-label">Padding</div><ul class="tight"><li>Batches need equal length (a callback to batching in class 2.5, Training in practice).</li><li>Short sequences are padded to match the longest.</li></ul></div>
+        </div>
+        <div class="callout"><span class="label">The point</span>These steps make text uniform enough to batch and feed to a model, without changing what the text means.</div>
+      </div>
+    </section>
+
+    <!-- 9. The naive first attempt (NEW) -->
+    <section>
+      <h2><span class="eyebrow">Tokens to numbers</span>The naive first attempt, and why it fails</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">The obvious way to turn a token id into a vector is <strong>one-hot</strong>: a vector as long as the whole vocabulary, all zeros except a single 1. It works, but it is a poor representation.</p>
+        <div class="cols cols-2" style="align-items:center">
+          <div class="figure-wrap">
+            <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" style="width:100%" font-family="Segoe UI, Arial, sans-serif">
+              <text x="160" y="24" text-anchor="middle" font-size="13" fill="#3f4a63">one-hot vector for "cat"</text>
+              <g font-size="13" fill="#172033" text-anchor="middle">
+                <rect x="30" y="40" width="34" height="34" fill="#f1f4fc" stroke="#93a7d8"/><text x="47" y="62">0</text>
+                <rect x="66" y="40" width="34" height="34" fill="#f1f4fc" stroke="#93a7d8"/><text x="83" y="62">0</text>
+                <rect x="102" y="40" width="34" height="34" fill="#2563eb" stroke="#2563eb"/><text x="119" y="62" fill="#ffffff">1</text>
+                <rect x="138" y="40" width="34" height="34" fill="#f1f4fc" stroke="#93a7d8"/><text x="155" y="62">0</text>
+                <rect x="174" y="40" width="34" height="34" fill="#f1f4fc" stroke="#93a7d8"/><text x="191" y="62">0</text>
+                <text x="240" y="62" font-size="20" fill="#6b7793">...</text>
+                <rect x="256" y="40" width="34" height="34" fill="#f1f4fc" stroke="#93a7d8"/><text x="273" y="62">0</text>
+              </g>
+              <text x="160" y="104" text-anchor="middle" font-size="12.5" fill="#6b7793">length = whole vocabulary (often 50,000+)</text>
+              <text x="160" y="150" text-anchor="middle" font-size="13" fill="#a32d2d">"dog bites man" = "man bites dog"</text>
+              <text x="160" y="172" text-anchor="middle" font-size="12.5" fill="#6b7793">bag of tokens: order is lost</text>
+            </svg>
+          </div>
+          <div>
+            <ul class="tight">
+              <li><strong>Huge and sparse:</strong> a 50,000-long vector to name one token.</li>
+              <li><strong>No similarity:</strong> "cat" and "dog" are as far apart as "cat" and "the". Every token is equally distant.</li>
+              <li><strong>Order-blind:</strong> summing one-hots into a bag of words throws away word order entirely.</li>
+            </ul>
+            <div class="callout" style="margin-top:8px"><span class="label">The fix, next</span>Replace the giant sparse vector with a short, dense, <strong>learned</strong> one: an embedding.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. token -> id -> vector -->
+    <section>
+      <h2><span class="eyebrow">Tokens to numbers</span>Token, then id, then embedding</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 660 170" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:300px" font-family="Segoe UI, Arial, sans-serif">
+            <defs><marker id="ai" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+            <rect x="20" y="60" width="120" height="50" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="80" y="90" text-anchor="middle" font-size="16" fill="#172033">"river"</text>
+            <line x1="140" y1="85" x2="196" y2="85" stroke="#6b7793" stroke-width="1.5" marker-end="url(#ai)"/><text x="168" y="74" text-anchor="middle" font-size="12" fill="#6b7793">look up</text>
+            <rect x="200" y="60" width="120" height="50" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/><text x="260" y="90" text-anchor="middle" font-size="16" fill="#172033">id 3184</text>
+            <line x1="320" y1="85" x2="376" y2="85" stroke="#6b7793" stroke-width="1.5" marker-end="url(#ai)"/><text x="348" y="74" text-anchor="middle" font-size="12" fill="#6b7793">embed</text>
+            <rect x="380" y="55" width="262" height="60" rx="8" fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"/><text x="511" y="82" text-anchor="middle" font-size="15" fill="#172033">[0.21, -0.6, 1.3, ... ]</text><text x="511" y="102" text-anchor="middle" font-size="12.5" fill="#3f4a63">a short dense vector (an embedding)</text>
+          </svg>
+        </div>
+        <div class="callout"><span class="label">The embedding</span>The id is just a name. The <strong>vector</strong> is what carries meaning: dense (a few hundred numbers, not 50,000), and <strong>learned during training</strong>, exactly like the weights in Module 2 (ML and DL essentials).</div>
+      </div>
+    </section>
+
+    <!-- 11. Embedding as a lookup table (NEW) -->
+    <section>
+      <h2><span class="eyebrow">Tokens to numbers</span>An embedding is a lookup table</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">The embedding layer is one big matrix: one row per token in the vocabulary, each row a vector of the same length. The token id just picks a row.</p>
+            <ul class="tight">
+              <li>Shape: vocabulary size by embedding dimension, for example 50,000 by 300.</li>
+              <li>Token id 3184 returns row 3184, no math, just a lookup.</li>
+              <li>Every number in the matrix is learned, like any weight from class 2.4 (PyTorch fundamentals). In PyTorch it is <code>nn.Embedding</code>.</li>
+            </ul>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg" style="width:100%" font-family="Segoe UI, Arial, sans-serif">
+              <defs><marker id="ael" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#4f9a2f"/></marker></defs>
+              <text x="150" y="22" text-anchor="middle" font-size="13" fill="#3f4a63">embedding matrix (vocab &#215; dim)</text>
+              <g font-size="12" text-anchor="middle" fill="#172033">
+                <text x="18" y="52">id</text>
+                <g fill="#f1f4fc" stroke="#c3d0ee"><rect x="40" y="38" width="60" height="26"/><rect x="100" y="38" width="60" height="26"/><rect x="160" y="38" width="60" height="26"/><rect x="220" y="38" width="60" height="26"/></g>
+                <text x="18" y="82">0</text><g fill="#f1f4fc" stroke="#c3d0ee"><rect x="40" y="68" width="60" height="26"/><rect x="100" y="68" width="60" height="26"/><rect x="160" y="68" width="60" height="26"/><rect x="220" y="68" width="60" height="26"/></g>
+                <text x="18" y="112">1</text><g fill="#f1f4fc" stroke="#c3d0ee"><rect x="40" y="98" width="60" height="26"/><rect x="100" y="98" width="60" height="26"/><rect x="160" y="98" width="60" height="26"/><rect x="220" y="98" width="60" height="26"/></g>
+                <text x="18" y="142" fill="#15803d" font-weight="700">3184</text>
+                <g fill="#c7e9b0" stroke="#4f9a2f"><rect x="40" y="128" width="60" height="26"/><rect x="100" y="128" width="60" height="26"/><rect x="160" y="128" width="60" height="26"/><rect x="220" y="128" width="60" height="26"/></g>
+                <text x="70" y="146">0.21</text><text x="130" y="146">-0.6</text><text x="190" y="146">1.3</text><text x="250" y="146">...</text>
+                <text x="18" y="172">...</text><g fill="#f1f4fc" stroke="#c3d0ee"><rect x="40" y="158" width="60" height="26"/><rect x="100" y="158" width="60" height="26"/><rect x="160" y="158" width="60" height="26"/><rect x="220" y="158" width="60" height="26"/></g>
+              </g>
+              <line x1="150" y1="196" x2="150" y2="222" stroke="#4f9a2f" stroke-width="2" marker-end="url(#ael)"/>
+              <text x="150" y="244" text-anchor="middle" font-size="13" fill="#15803d">row 3184 is the vector for "river"</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. word2vec -->
+    <section>
+      <h2><span class="eyebrow">Meaning as a vector</span>word2vec: the ancestor idea</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">The old breakthrough: train the vectors so that similar words land near each other, and directions carry meaning.</p>
+            <p class="stmt" style="margin-top:8px">$$ \text{king} - \text{man} + \text{woman} \approx \text{queen} $$</p>
+            <div class="callout" style="margin-top:10px"><span class="label">Just the ancestor</span>word2vec gives one fixed vector per word. Modern LLMs learn richer, context-aware vectors, so "bank" differs in "river bank" and "bank loan". The payoff returns in class 4.4 (Embeddings and vector databases).</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 300 250" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+              <line x1="30" y1="215" x2="285" y2="215" stroke="#cbd3e6"/><line x1="40" y1="30" x2="40" y2="220" stroke="#cbd3e6"/>
+              <line x1="90" y1="155" x2="150" y2="95" stroke="#6b7793" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <line x1="160" y1="190" x2="220" y2="130" stroke="#6b7793" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <circle cx="90" cy="155" r="5" fill="#2563eb"/><text x="90" y="147" text-anchor="middle" font-size="13" fill="#172033">man</text>
+              <circle cx="150" cy="95" r="5" fill="#2563eb"/><text x="150" y="87" text-anchor="middle" font-size="13" fill="#172033">king</text>
+              <circle cx="160" cy="190" r="5" fill="#be123c"/><text x="164" y="208" text-anchor="middle" font-size="13" fill="#172033">woman</text>
+              <circle cx="220" cy="130" r="5" fill="#15803d"/><text x="222" y="122" text-anchor="middle" font-size="13" fill="#172033">queen</text>
+              <text x="250" y="165" font-size="11" fill="#6b7793">same shift</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12b. How word2vec learns: CBOW and skip-gram (NEW) -->
+    <section>
+      <h2><span class="eyebrow">Meaning as a vector</span>How word2vec learns those vectors</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">Slide a small window across the text and play a prediction game. There are two mirror-image versions, and no labels are needed: the text is its own training signal.</p>
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">CBOW: context predicts the blank</div>
+            <div class="figure-wrap" style="margin-top:4px">
+              <svg viewBox="0 0 320 170" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:190px" font-family="Segoe UI, Arial, sans-serif">
+                <defs><marker id="acb" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f9a2f"/></marker></defs>
+                <g font-size="14" fill="#3f4a63" text-anchor="middle">
+                  <text x="40" y="36">the</text><text x="95" y="36">cat</text>
+                  <rect x="128" y="18" width="64" height="26" rx="6" fill="#f1f4fc" stroke="#93a7d8" stroke-dasharray="4 3"/><text x="160" y="37" fill="#a32d2d" font-weight="700">___</text>
+                  <text x="225" y="36">on</text><text x="280" y="36">mat</text>
+                </g>
+                <g stroke="#4f9a2f" stroke-width="1.6" marker-end="url(#acb)">
+                  <line x1="40" y1="48" x2="140" y2="66"/><line x1="95" y1="48" x2="150" y2="66"/>
+                  <line x1="225" y1="48" x2="172" y2="66"/><line x1="280" y1="48" x2="182" y2="66"/>
+                </g>
+                <rect x="126" y="74" width="68" height="30" rx="6" fill="#c7e9b0" stroke="#4f9a2f"/><text x="160" y="94" text-anchor="middle" font-size="14" font-weight="700" fill="#172033">sat</text>
+                <text x="160" y="130" text-anchor="middle" font-size="12.5" fill="#6b7793">fill in the missing word</text>
+              </svg>
+            </div>
+          </div>
+          <div class="card">
+            <div class="col-label">Skip-gram: the word predicts its context</div>
+            <div class="figure-wrap" style="margin-top:4px">
+              <svg viewBox="0 0 320 170" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:190px" font-family="Segoe UI, Arial, sans-serif">
+                <defs><marker id="asg" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f9a2f"/></marker></defs>
+                <rect x="126" y="16" width="68" height="30" rx="6" fill="#c7e9b0" stroke="#4f9a2f"/><text x="160" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#172033">sat</text>
+                <g stroke="#4f9a2f" stroke-width="1.6" marker-end="url(#asg)">
+                  <line x1="140" y1="48" x2="45" y2="86"/><line x1="150" y1="48" x2="100" y2="86"/>
+                  <line x1="172" y1="48" x2="222" y2="86"/><line x1="182" y1="48" x2="280" y2="86"/>
+                </g>
+                <g font-size="14" fill="#15803d" text-anchor="middle">
+                  <text x="40" y="102">the</text><text x="100" y="102">cat</text><text x="222" y="102">on</text><text x="280" y="102">mat</text>
+                </g>
+                <text x="160" y="134" text-anchor="middle" font-size="12.5" fill="#6b7793">guess each neighbor</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="callout"><span class="label">Which to picture, and why it works</span>CBOW is the fill-in-the-blank version, usually the easier intuition; skip-gram is the reverse and does better on rare words. Either way, a word is known by the company it keeps: "coffee" and "tea" share neighbors like "cup" and "drink", so they land near each other. Repeat across millions of windows and the vectors settle.</div>
+      </div>
+    </section>
+
+    <!-- 12b2. The shallow network behind word2vec (NEW) -->
+    <section>
+      <h2><span class="eyebrow">Meaning as a vector</span>The shallow network behind it</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div class="figure-wrap">
+            <svg viewBox="0 0 360 250" xmlns="http://www.w3.org/2000/svg" style="width:100%" font-family="Segoe UI, Arial, sans-serif">
+              <defs><marker id="aw2n" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+              <!-- input one-hot -->
+              <g font-size="11" text-anchor="middle">
+                <rect x="26" y="40" width="30" height="26" fill="#f1f4fc" stroke="#93a7d8"/><text x="41" y="58" fill="#172033">0</text>
+                <rect x="26" y="66" width="30" height="26" fill="#f1f4fc" stroke="#93a7d8"/><text x="41" y="84" fill="#172033">0</text>
+                <rect x="26" y="92" width="30" height="26" fill="#2563eb" stroke="#2563eb"/><text x="41" y="110" fill="#fff">1</text>
+                <rect x="26" y="118" width="30" height="26" fill="#f1f4fc" stroke="#93a7d8"/><text x="41" y="136" fill="#172033">0</text>
+                <rect x="26" y="144" width="30" height="26" fill="#f1f4fc" stroke="#93a7d8"/><text x="41" y="162" fill="#172033">0</text>
+              </g>
+              <text x="41" y="188" text-anchor="middle" font-size="11" fill="#3f4a63">one-hot (V)</text>
+              <!-- hidden -->
+              <g fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"><circle cx="168" cy="70" r="17"/><circle cx="168" cy="120" r="17"/><circle cx="168" cy="170" r="17"/></g>
+              <text x="168" y="205" text-anchor="middle" font-size="11" fill="#3d7a24" font-weight="700">hidden (N), linear</text>
+              <!-- W lines from lit cell to each hidden circle's left edge -->
+              <g stroke="#2563eb" stroke-width="1.8"><line x1="56" y1="105" x2="151" y2="70"/><line x1="56" y1="105" x2="151" y2="120"/><line x1="56" y1="105" x2="151" y2="170"/></g>
+              <text x="100" y="60" font-size="12" fill="#2563eb" font-weight="700">W</text>
+              <!-- W' from each hidden circle's right edge into softmax -->
+              <g stroke="#6b7793" stroke-width="1.4" marker-end="url(#aw2n)"><line x1="185" y1="70" x2="270" y2="100"/><line x1="185" y1="120" x2="270" y2="106"/><line x1="185" y1="170" x2="270" y2="112"/></g>
+              <text x="226" y="86" font-size="12" fill="#6b7793" font-weight="700">W'</text>
+              <!-- output -->
+              <rect x="272" y="80" width="72" height="52" rx="8" fill="#fde9b8" stroke="#d99a00"/><text x="308" y="102" text-anchor="middle" font-size="12" fill="#172033">softmax</text><text x="308" y="120" text-anchor="middle" font-size="11" fill="#3f4a63">over vocab</text>
+              <text x="308" y="150" text-anchor="middle" font-size="11" fill="#3f4a63">predict context</text>
+            </svg>
+          </div>
+          <div>
+            <p class="stmt">word2vec is a tiny neural network, exactly the kind from Module 2 (ML and DL essentials). That is where the embeddings actually live.</p>
+            <ul class="tight">
+              <li>Input: the one-hot vector of a word.</li>
+              <li>Hidden: a single linear layer, the weighted sum from class 2.3 (Neural networks), with no activation.</li>
+              <li>Output: softmax over the whole vocabulary, predicting a context word.</li>
+              <li>Trained by the same loop as class 2.4 (PyTorch fundamentals).</li>
+            </ul>
+            <div class="callout" style="margin-top:8px"><span class="label">Where the embedding is</span>Because the input is one-hot, the hidden vector is simply one row of the input matrix \( W \). That matrix is the embedding table: after training we keep it and throw the output layer away.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12c. Embeddings vs the model that uses them (NEW) -->
+    <section>
+      <h2><span class="eyebrow">Meaning as a vector</span>Embeddings, and what runs on top of them</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">A common mix-up: do sequence models like RNNs learn the embeddings? Keep the two pieces separate. The embedding is a lookup table of vectors; the model is what processes the sequence of those vectors.</p>
+        <div class="figure-wrap">
+          <svg viewBox="0 0 680 150" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:250px" font-family="Segoe UI, Arial, sans-serif">
+            <defs><marker id="aed" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+            <rect x="20" y="52" width="120" height="50" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="80" y="82" text-anchor="middle" font-size="14" fill="#172033">token ids</text>
+            <line x1="140" y1="77" x2="192" y2="77" stroke="#6b7793" stroke-width="1.5" marker-end="url(#aed)"/>
+            <rect x="196" y="46" width="150" height="62" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/><text x="271" y="72" text-anchor="middle" font-size="14" fill="#172033">embedding table</text><text x="271" y="92" text-anchor="middle" font-size="12" fill="#3f4a63">id to vector (lookup)</text>
+            <line x1="346" y1="77" x2="398" y2="77" stroke="#6b7793" stroke-width="1.5" marker-end="url(#aed)"/>
+            <rect x="402" y="46" width="180" height="62" rx="8" fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"/><text x="492" y="72" text-anchor="middle" font-size="14" fill="#172033">sequence model</text><text x="492" y="92" text-anchor="middle" font-size="12" fill="#3f4a63">RNN, LSTM, or transformer</text>
+            <line x1="582" y1="77" x2="634" y2="77" stroke="#6b7793" stroke-width="1.5" marker-end="url(#aed)"/>
+            <text x="658" y="82" text-anchor="middle" font-size="14" fill="#172033">output</text>
+          </svg>
+        </div>
+        <div class="callout"><span class="label">The distinction</span>The embedding table is learned either by a dedicated algorithm like word2vec or GloVe, then reused, or jointly with the model as its first layer (<code>nn.Embedding</code>, trained by backprop). The RNN, LSTM, or transformer is a separate piece that consumes those vectors. It is not itself an embedding algorithm.</div>
+      </div>
+    </section>
+
+    <!-- 12d. Meet RNNs and LSTMs (NEW) -->
+    <section>
+      <h2><span class="eyebrow">The need</span>Meet RNNs and LSTMs</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">Before transformers, the standard sequence model was the recurrent neural network. It reads the embedding vectors one at a time, keeping a <strong>hidden state</strong>: a running memory it updates at each step and passes to the next.</p>
+            <ul class="tight">
+              <li>Step by step: take the next word, combine it with the memory, produce a new memory.</li>
+              <li>An <strong>LSTM</strong> is an RNN with gates that decide what to keep, forget, and output, so it holds context longer.</li>
+            </ul>
+            <div class="callout" style="margin-top:8px"><span class="label">Keep it light</span>You do not need the internals of RNNs or LSTMs. Hold on to one idea: a memory passed forward from word to word. That alone explains their two weaknesses, a memory that fades over distance and a read that cannot be parallelized, which are exactly what attention fixes in class 3.2 (Attention).</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg" style="width:100%" font-family="Segoe UI, Arial, sans-serif">
+              <defs><marker id="arn" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+              <g fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"><rect x="30" y="80" width="60" height="44" rx="8"/><rect x="140" y="80" width="60" height="44" rx="8"/><rect x="250" y="80" width="60" height="44" rx="8"/></g>
+              <g font-size="14" fill="#172033" text-anchor="middle"><text x="60" y="107">h1</text><text x="170" y="107">h2</text><text x="280" y="107">h3</text></g>
+              <g stroke="#6b7793" stroke-width="2" marker-end="url(#arn)"><line x1="90" y1="102" x2="138" y2="102"/><line x1="200" y1="102" x2="248" y2="102"/></g>
+              <text x="115" y="94" text-anchor="middle" font-size="11" fill="#6b7793">memory</text><text x="225" y="94" text-anchor="middle" font-size="11" fill="#6b7793">memory</text>
+              <g stroke="#4f9a2f" stroke-width="2" marker-end="url(#arn)"><line x1="60" y1="170" x2="60" y2="126"/><line x1="170" y1="170" x2="170" y2="126"/><line x1="280" y1="170" x2="280" y2="126"/></g>
+              <g font-size="13" fill="#15803d" text-anchor="middle" font-weight="600"><text x="60" y="188">V(the)</text><text x="170" y="188">V(cat)</text><text x="280" y="188">V(sat)</text></g>
+              <text x="170" y="212" text-anchor="middle" font-size="12" fill="#6b7793">the input is the word's embedding vector, not the word itself</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12e. RNN classifying a sentence (NEW) -->
+    <section>
+      <h2><span class="eyebrow">The need</span>An RNN classifying a sentence</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">A classic use, before transformers: read a whole sentence, then decide a label. The RNN consumes the word vectors one at a time; its final hidden state is a summary of the sentence, which a small classifier turns into a prediction.</p>
+            <ul class="tight">
+              <li>Sentiment: is this review positive or negative?</li>
+              <li>The last hidden state feeds a linear layer, then softmax (class 2.3, Neural networks).</li>
+              <li>The classifier reads only the final state, which has folded in all the earlier words. (Some models instead pool over every state.)</li>
+            </ul>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 430 150" xmlns="http://www.w3.org/2000/svg" style="width:100%" font-family="Segoe UI, Arial, sans-serif">
+              <defs>
+                <marker id="arc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6b7793"/></marker>
+                <marker id="arcb" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#3f6fd0"/></marker>
+              </defs>
+              <g fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"><rect x="16" y="28" width="52" height="38" rx="7"/><rect x="96" y="28" width="52" height="38" rx="7"/><rect x="176" y="28" width="52" height="38" rx="7"/><rect x="256" y="28" width="52" height="38" rx="7"/></g>
+              <g font-size="13" fill="#172033" text-anchor="middle"><text x="42" y="52">h1</text><text x="122" y="52">h2</text><text x="202" y="52">h3</text><text x="282" y="52">h4</text></g>
+              <g stroke="#6b7793" stroke-width="1.8" marker-end="url(#arc)"><line x1="68" y1="47" x2="94" y2="47"/><line x1="148" y1="47" x2="174" y2="47"/><line x1="228" y1="47" x2="254" y2="47"/></g>
+              <g stroke="#4f9a2f" stroke-width="1.8" marker-end="url(#arc)"><line x1="42" y1="118" x2="42" y2="68"/><line x1="122" y1="118" x2="122" y2="68"/><line x1="202" y1="118" x2="202" y2="68"/><line x1="282" y1="118" x2="282" y2="68"/></g>
+              <g font-size="12" fill="#15803d" text-anchor="middle" font-weight="600"><text x="42" y="136">V(the)</text><text x="122" y="136">V(film)</text><text x="202" y="136">V(was)</text><text x="282" y="136">V(great)</text></g>
+              <line x1="308" y1="47" x2="336" y2="47" stroke="#3f6fd0" stroke-width="1.8" marker-end="url(#arcb)"/>
+              <text x="322" y="20" text-anchor="middle" font-size="10.5" fill="#3f6fd0">final state</text>
+              <rect x="338" y="29" width="76" height="36" rx="8" fill="#e8f0ff" stroke="#3f6fd0" stroke-width="1.5"/><text x="376" y="51" text-anchor="middle" font-size="12" fill="#172033">classifier</text>
+              <line x1="376" y1="65" x2="376" y2="98" stroke="#6b7793" stroke-width="1.8" marker-end="url(#arc)"/>
+              <text x="376" y="120" text-anchor="middle" font-size="14" fill="#15803d" font-weight="700">positive</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. RNN memory fades (SPLIT part 1) -->
+    <section>
+      <h2><span class="eyebrow">The need</span>How older models read, and forget</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">RNNs and LSTMs read one word at a time, carrying a running memory forward. The catch: that memory of early words fades as the sentence goes on, so distant context is lost.</p>
+        <div class="figure-wrap">
+          <svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" style="width:100%" font-family="Segoe UI, Arial, sans-serif">
+            <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+            <g><rect x="30" y="46" width="80" height="40" rx="6" fill="#eef4ff" stroke="#93a7d8"/><text x="70" y="71" text-anchor="middle" font-size="15" fill="#172033">The</text>
+               <rect x="170" y="46" width="80" height="40" rx="6" fill="#eef4ff" stroke="#93a7d8"/><text x="210" y="71" text-anchor="middle" font-size="15" fill="#172033">cat</text>
+               <rect x="310" y="46" width="80" height="40" rx="6" fill="#eef4ff" stroke="#93a7d8"/><text x="350" y="71" text-anchor="middle" font-size="15" fill="#172033">sat</text>
+               <rect x="450" y="46" width="90" height="40" rx="6" fill="#eef4ff" stroke="#93a7d8"/><text x="495" y="71" text-anchor="middle" font-size="15" fill="#172033">down</text></g>
+            <g stroke="#6b7793" stroke-width="2" marker-end="url(#a1)"><line x1="110" y1="66" x2="168" y2="66"/><line x1="250" y1="66" x2="308" y2="66"/><line x1="390" y1="66" x2="448" y2="66"/></g>
+            <text x="30" y="132" font-size="13" fill="#3f4a63">memory of "The":</text>
+            <circle cx="210" cy="128" r="9" fill="#2563eb"><animate attributeName="opacity" values="1;0.2" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="350" cy="128" r="9" fill="#2563eb"><animate attributeName="opacity" values="0.55;0.12" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="495" cy="128" r="9" fill="#2563eb"><animate attributeName="opacity" values="0.3;0.06" dur="2s" repeatCount="indefinite"/></circle>
+            <text x="360" y="176" text-anchor="middle" font-size="13" fill="#a32d2d">the further along, the fainter the early context</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. RNN sequential, attention parallel (SPLIT part 2) -->
+    <section>
+      <h2><span class="eyebrow">The need</span>Sequential and slow, versus all at once</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div class="figure-wrap">
+            <svg viewBox="0 0 320 230" xmlns="http://www.w3.org/2000/svg" style="width:100%" font-family="Segoe UI, Arial, sans-serif">
+              <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#a32d2d"/></marker></defs>
+              <text x="160" y="20" text-anchor="middle" font-size="13" fill="#a32d2d" font-weight="700">RNN: step after step</text>
+              <g fill="#eef4ff" stroke="#93a7d8"><rect x="40" y="34" width="50" height="30" rx="5"/><rect x="135" y="34" width="50" height="30" rx="5"/><rect x="230" y="34" width="50" height="30" rx="5"/></g>
+              <g font-size="12" fill="#172033" text-anchor="middle"><text x="65" y="54">w1</text><text x="160" y="54">w2</text><text x="255" y="54">w3</text></g>
+              <g stroke="#a32d2d" stroke-width="2" marker-end="url(#a2)"><line x1="90" y1="49" x2="133" y2="49"/><line x1="185" y1="49" x2="228" y2="49"/></g>
+              <text x="160" y="86" text-anchor="middle" font-size="11.5" fill="#6b7793">w3 must wait for w2, w2 for w1</text>
+
+              <text x="160" y="128" text-anchor="middle" font-size="13" fill="#15803d" font-weight="700">Attention: all at once</text>
+              <g fill="#c7e9b0" stroke="#4f9a2f"><rect x="40" y="142" width="50" height="30" rx="5"/><rect x="135" y="142" width="50" height="30" rx="5"/><rect x="230" y="142" width="50" height="30" rx="5"/></g>
+              <g font-size="12" fill="#172033" text-anchor="middle"><text x="65" y="162">w1</text><text x="160" y="162">w2</text><text x="255" y="162">w3</text></g>
+              <g stroke="#4f9a2f" stroke-width="1.6"><line x1="65" y1="142" x2="160" y2="142"/><line x1="65" y1="142" x2="255" y2="142"/><line x1="160" y1="142" x2="255" y2="142"/><animate attributeName="opacity" values="0.3;0.85;0.3" dur="2s" repeatCount="indefinite"/></g>
+              <text x="160" y="196" text-anchor="middle" font-size="11.5" fill="#6b7793">every word sees every word, in parallel</text>
+            </svg>
+          </div>
+          <div>
+            <p class="stmt">Reading one step at a time has a second cost: each word waits for the one before, so the work cannot be spread across a GPU.</p>
+            <div class="callout"><span class="label">What we need</span>A mechanism where every word looks directly at every other word, at once: no fading memory, and fully parallel. That mechanism is attention, and it is the whole of class 3.2 (Attention).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15. Build -->
+    <section>
+      <h2><span class="eyebrow">Build</span>Tokenize a sentence two ways</h2>
+      <div class="body center">
+        <p class="lead">In the notebook you run one sentence through two different tokenizers and compare the tokens and ids. You will see that tokenization is a choice, not a fixed fact, that the same words can split differently, and that a leading space changes a token's id.</p>
+      </div>
+    </section>
+
+    <!-- 16. Wrap -->
+    <section>
+      <h2><span class="eyebrow">Wrap up</span>Your turn, and what is next</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Micro-assignment</div>
+            <ul>
+              <li>Tokenize a few sentences and count tokens.</li>
+              <li>Show two tokenizers split the same text differently.</li>
+              <li>Write one line on why a bag of independent tokens loses word order and context.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Next: class 3.2, Attention</div>
+            <ul>
+              <li>The one mechanism behind every LLM.</li>
+              <li>Query, key, value, decoded.</li>
+              <li>Every word looking at every word.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+      primaryColor: '#ffffff', primaryTextColor: '#172033', primaryBorderColor: '#2563eb',
+      lineColor: '#2563eb', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', fontSize: '16px' },
+    flowchart: { nodeSpacing: 45, rankSpacing: 50, htmlLabels: true } });
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', width: 1280, height: 720,
+    margin: 0, center: false, transition: 'slide', plugins: [ RevealHighlight, RevealNotes ]
+  }).then(function () {
+    if (window.mermaid) { mermaid.run(); }
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        { left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false } ], throwOnError: false });
+    }
+  });
+</script>
+</body>
+</html>

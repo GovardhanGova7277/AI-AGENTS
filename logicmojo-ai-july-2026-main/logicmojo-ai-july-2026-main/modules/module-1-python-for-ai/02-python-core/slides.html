@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class 1.2 - Python core</title>
+
+  <!-- Reveal.js core, pinned to 5.1.0 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+
+  <!-- Shared course theme (single source of truth for all decks) -->
+  <link rel="stylesheet" href="../../../assets/theme.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="deck-footer">GenAI and Agentic AI &middot; Module 1 &middot; Class 1.2</div>
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section class="title" data-background-gradient="linear-gradient(120deg, #1e3a8a 0%, #3730a3 55%, #312e81 100%)">
+      <span class="kicker">Module 1 &middot; Python for AI &middot; Class 1.2</span>
+      <h1>Python core</h1>
+      <p class="lead">Move from running code to writing reusable code: strings and input, the core data structures, comprehensions, then functions and type hints.</p>
+    </section>
+
+    <!-- 2. Recap and today -->
+    <section>
+      <h2><span class="eyebrow">Recap and today</span>From running code to writing it</h2>
+      <div class="body">
+        <p class="stmt">In 1.1 you ran scripts. Today you write the pieces you will reuse for the rest of the course.</p>
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">You already can</div>
+            <ul class="tight">
+              <li>Use variables and types</li>
+              <li>Build and index lists</li>
+              <li>Loop and branch with if / for / while</li>
+              <li>Format text with f-strings</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Today you add</div>
+            <ul class="tight">
+              <li><strong>String methods</strong>: slice, split, join, search, replace</li>
+              <li><strong>input()</strong>: read from the user (always text)</li>
+              <li><strong>Tuples, dicts, sets</strong>: more ways to hold data</li>
+              <li><strong>Comprehensions</strong>: build a collection in one line</li>
+              <li><strong>Functions</strong>: reusable machines, up to <code>*args</code> and <code>**kwargs</code></li>
+              <li><strong>Type hints</strong>: document what goes in and out</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Strings 1: case, trim, slice -->
+    <section>
+      <h2><span class="eyebrow">Strings &middot; 1 of 3</span>Reshape text: case, trim, slice</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">s = "  Data Science  "
+print(s.strip())          # "Data Science"
+print(s.strip().upper())  # "DATA SCIENCE"
+print("ada".title())      # "Ada"
+
+text = "python"
+print(text[0], text[-1])  # p n
+print(text[::-1])         # nohtyp
+print(len(text))          # 6</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>.lower()</code>, <code>.upper()</code>, <code>.title()</code> change case.</li>
+              <li><code>.strip()</code> trims whitespace from the ends.</li>
+              <li>Index and slice like a list: <code>s[0]</code>, <code>s[-1]</code>, <code>s[:3]</code>, <code>s[::-1]</code>.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">Strings are immutable</span>
+              Every method returns a <strong>new</strong> string; the original never changes. Keep the result by assigning it.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Strings 2: split, join, replace -->
+    <section>
+      <h2><span class="eyebrow">Strings &middot; 2 of 3</span>Split, join, replace</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">csv = "ada,alan,grace"
+parts = csv.split(",")
+print(parts)              # ['ada', 'alan', 'grace']
+
+print(" | ".join(parts))  # "ada | alan | grace"
+
+print("cat and dog".replace("and", "or"))
+# "cat or dog"</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>.split(sep)</code> turns a string into a <strong>list</strong> of parts.</li>
+              <li><code>sep.join(list)</code> turns a list of strings back into <strong>one</strong> string.</li>
+              <li><code>.replace(old, new)</code> swaps every occurrence.</li>
+            </ul>
+            <div class="analogy"><span class="label">Remember</span>Split and join are opposites: text to list, list to text.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Strings 3: search, test, format -->
+    <section>
+      <h2><span class="eyebrow">Strings &middot; 3 of 3</span>Search, test, and format</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">email = "ada@site.com"
+print("@" in email)             # True
+print(email.startswith("ada"))  # True
+print(email.find("@"))          # 3
+print("banana".count("a"))      # 3
+print("2024".isdigit())         # True
+
+print(f"{3.14159:.2f}")         # 3.14</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>in</code>, <code>.startswith()</code>, <code>.endswith()</code> test for substrings.</li>
+              <li><code>.find()</code> gives a position; <code>.count()</code> counts occurrences.</li>
+              <li><code>.isdigit()</code>, <code>.isalpha()</code> check the content.</li>
+              <li>f-strings format too: <code>f"{price:.2f}"</code>, alignment <code>f"{name:>10}"</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Reading input -->
+    <section>
+      <h2><span class="eyebrow">Reading input</span>input() reads a line, always as text</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">age = input("Your age? ")   # user types 42
+print(type(age))            # &lt;class 'str'&gt;
+print(age + 1)              # TypeError: str + int
+
+age = int(age)              # convert first
+print(age + 1)              # 43
+
+# convert on the way in
+price = float(input("Price? "))</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>input(prompt)</code> pauses the program, waits for Enter, and hands back the whole line the user typed.</li>
+              <li>The prompt is optional but tells the user what to enter.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">Always a string</span>
+              Even if the user types <code>42</code>, you get the text <code>"42"</code>. Convert with <code>int(...)</code> or <code>float(...)</code> before any math, or values will concatenate or raise a <code>TypeError</code>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Tuples -->
+    <section>
+      <h2><span class="eyebrow">Data structures &middot; tuples</span>Tuples: fixed records</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">color = (255, 128, 0)     # an ordered, fixed record
+r, g, b = color           # unpack into variables
+print(r, g, b)            # 255 128 0
+print(color[0])           # 255
+
+print(color.count(0))     # 1
+print(color.index(128))   # 1
+
+# color[0] = 99           # TypeError: cannot change</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Ordered like a list, but <strong>immutable</strong>.</li>
+              <li>Great for a fixed record: an RGB color, a coordinate, a row.</li>
+              <li><strong>Unpack</strong> straight into variables.</li>
+              <li>Only two methods, since it never changes: <code>.count()</code> and <code>.index()</code>.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">No insert, update, or delete</span>
+              A tuple is frozen once made. Need to change it? Use a list.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Dicts 1 -->
+    <section>
+      <h2><span class="eyebrow">Data structures &middot; dicts (1 of 2)</span>Dicts: add, update, delete</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">stock = {"apple": 3, "banana": 5}
+print(stock["apple"])     # 3   (access by key)
+
+stock["cherry"] = 8       # insert a new key
+stock["apple"] = 4        # update an existing key
+del stock["banana"]       # delete a key
+print(stock)              # {'apple': 4, 'cherry': 8}
+
+print(stock.pop("apple")) # 4   (remove and return)</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Look up a value by its <strong>key</strong>, not a position.</li>
+              <li><code>d[key] = value</code> both <strong>inserts</strong> and <strong>updates</strong>.</li>
+              <li><code>del d[key]</code> removes; <code>d.pop(key)</code> removes and hands the value back.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Dicts 2 -->
+    <section>
+      <h2><span class="eyebrow">Data structures &middot; dicts (2 of 2)</span>Dicts: look inside safely</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">stock = {"apple": 4, "cherry": 8}
+
+print("apple" in stock)      # True   (membership)
+print(stock.get("pear", 0))  # 0      (default, no KeyError)
+
+for item, qty in stock.items():
+    print(item, qty)
+
+stock.update({"pear": 2})    # merge in another dict
+print(list(stock.keys()))    # ['apple', 'cherry', 'pear']</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>in</code> tests for a key; <code>.get(key, default)</code> avoids a crash on a missing key.</li>
+              <li><code>.items()</code>, <code>.keys()</code>, <code>.values()</code> loop over the contents.</li>
+              <li><code>.update()</code> merges another dict in.</li>
+            </ul>
+            <div class="analogy"><span class="label">Think of it as</span>A labeled filing cabinet: fetch, file, and refile by label.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Sets 1 -->
+    <section>
+      <h2><span class="eyebrow">Data structures &middot; sets (1 of 2)</span>Sets: unique items</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">langs = {"python", "sql"}
+langs.add("rust")          # insert
+langs.add("python")        # ignored: already there
+langs.discard("sql")       # delete (no error if missing)
+
+print("python" in langs)   # True   (fast membership)
+print(len(langs))          # 2
+
+print(set([1, 1, 2, 2, 3]))  # {1, 2, 3}  (dedupe)</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>An <strong>unordered</strong> collection of <strong>unique</strong> items.</li>
+              <li><code>.add()</code> inserts; adding a duplicate does nothing.</li>
+              <li><code>.discard()</code> and <code>.remove()</code> delete.</li>
+              <li>Wrapping a list in <code>set(...)</code> drops duplicates.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Sets 2: algebra + Venn -->
+    <section>
+      <h2><span class="eyebrow">Data structures &middot; sets (2 of 2)</span>Set algebra: union, intersection, difference</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">frontend = {"html", "css", "js"}
+backend  = {"python", "sql", "js"}
+
+frontend | backend   # union: in either
+frontend &amp; backend   # intersection: in both -> {'js'}
+frontend - backend   # difference: only in frontend</code></pre>
+          </div>
+          <div class="venn">
+            <div class="venn-row">
+              <div class="venn-item"><svg viewBox="0 0 160 100" class="venn"><circle class="circle-a" cx="60" cy="52" r="34"/><circle class="circle-b" cx="100" cy="52" r="34"/><circle class="shade" cx="60" cy="52" r="34"/><circle class="shade" cx="100" cy="52" r="34"/><circle class="circle-a" cx="60" cy="52" r="34" fill="none"/><circle class="circle-b" cx="100" cy="52" r="34" fill="none"/><text class="lbl" x="40" y="57">A</text><text class="lbl" x="116" y="57">B</text></svg><div class="cap"><strong>|</strong> union</div></div>
+              <div class="venn-item"><svg viewBox="0 0 160 100" class="venn"><defs><clipPath id="vennInt"><circle cx="100" cy="52" r="34"/></clipPath></defs><circle class="circle-a" cx="60" cy="52" r="34"/><circle class="circle-b" cx="100" cy="52" r="34"/><circle class="shade" cx="60" cy="52" r="34" clip-path="url(#vennInt)"/><circle class="circle-a" cx="60" cy="52" r="34" fill="none"/><circle class="circle-b" cx="100" cy="52" r="34" fill="none"/><text class="lbl" x="40" y="57">A</text><text class="lbl" x="116" y="57">B</text></svg><div class="cap"><strong>&amp;</strong> intersection</div></div>
+              <div class="venn-item"><svg viewBox="0 0 160 100" class="venn"><circle class="circle-a" cx="60" cy="52" r="34"/><circle class="circle-b" cx="100" cy="52" r="34"/><circle class="shade" cx="60" cy="52" r="34"/><circle class="erase" cx="100" cy="52" r="34"/><circle class="circle-a" cx="60" cy="52" r="34" fill="none"/><circle class="circle-b" cx="100" cy="52" r="34" fill="none"/><text class="lbl" x="40" y="57">A</text><text class="lbl" x="116" y="57">B</text></svg><div class="cap"><strong>-</strong> difference</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. List comprehension -->
+    <section>
+      <h2><span class="eyebrow">Comprehensions &middot; list</span>Build a list in one line</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">celsius = [0, 20, 37, 100]
+
+# map: transform every item
+[c * 9/5 + 32 for c in celsius]
+# [32.0, 68.0, 98.6, 212.0]
+
+# filter: a trailing if keeps some
+[c for c in celsius if c >= 20]     # [20, 37, 100]
+
+# conditional expression: choose per item
+["pass" if s >= 70 else "fail" for s in [55, 82, 70]]
+# ['fail', 'pass', 'pass']</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><strong>Map</strong>: an expression applied to each item.</li>
+              <li><strong>Filter</strong>: a trailing <code>if</code> keeps only some items.</li>
+              <li><strong>Conditional expression</strong>: <code>a if cond else b</code> at the front chooses the value per item.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">Two different "if"s</span>
+              A trailing <code>if</code> filters. An <code>if / else</code> at the front chooses the value.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Dict comprehension -->
+    <section>
+      <h2><span class="eyebrow">Comprehensions &middot; dict</span>Build a dict in one line</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">names = ["Ada", "Alan", "Grace"]
+
+# key: value for each item
+{name: name[0] for name in names}
+# {'Ada': 'A', 'Alan': 'A', 'Grace': 'G'}
+
+# filter while building
+{n: len(n) for n in names if len(n) &lt;= 4}
+# {'Ada': 3, 'Alan': 4}</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Same shape as a list comprehension, but you write <code>key: value</code>.</li>
+              <li>Great for turning a list into a fast lookup table.</li>
+              <li>A trailing <code>if</code> filters here too.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. Readability rule -->
+    <section>
+      <h2><span class="eyebrow">Comprehensions</span>Keep them readable</h2>
+      <div class="body">
+        <p class="stmt">Comprehensions should make code clearer, not denser.</p>
+        <div class="callout">
+          <span class="label">Rule of thumb</span>
+          If you cannot read it aloud in one breath, use a plain loop instead. A comprehension that needs a second read is doing too much.
+        </div>
+      </div>
+    </section>
+
+    <!-- 15. Functions: the machine -->
+    <section>
+      <h2><span class="eyebrow">Functions</span>A function is a reusable machine</h2>
+      <div class="body">
+        <div class="tool-detail">
+          <div>
+            <p class="stmt">Inputs go in, work happens, a result comes out.</p>
+            <ul>
+              <li>The inputs are <strong>parameters</strong>.</li>
+              <li>The result is handed back with <strong>return</strong>.</li>
+              <li>Define it once, then call it as many times as you like.</li>
+            </ul>
+          </div>
+          <div class="analogy">
+            <span class="label">Think of it as</span>
+            A coffee machine: beans and water in, coffee out. You do not rebuild it each morning; you just use it again.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16. Parameters, return, defaults -->
+    <section>
+      <h2><span class="eyebrow">Functions</span>Parameters, return, and defaults</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">def area(width, height):
+    return width * height
+
+print(area(3, 4))            # 12
+
+def greet(name, greeting="Hello"):  # default after non-default
+    return f"{greeting}, {name}"
+
+print(greet("Ada"))          # Hello, Ada
+print(greet("Alan", "Hi"))   # Hi, Alan</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><strong>Parameters</strong> name the inputs.</li>
+              <li><strong>return</strong> sends a value back to the caller.</li>
+              <li>A <strong>default</strong> is used when you leave that argument out.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">Defaults come last</span>
+              Parameters with defaults must follow those without. <code>def f(a, b=1)</code> is fine; <code>def f(a=1, b)</code> is a <code>SyntaxError</code>, since Python could not tell which argument you meant.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17. print vs return -->
+    <section>
+      <h2><span class="eyebrow">Functions</span>print shows, return gives back</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">def add_shout(a, b):
+    print(a + b)        # shows it, returns None
+
+result = add_shout(2, 3)   # prints 5
+print(result)              # None</code></pre>
+          </div>
+          <div>
+            <div class="callout">
+              <span class="label">The classic mix-up</span>
+              <code>print</code> is for a human to read. <code>return</code> hands a value back to the program. If a function only prints, the caller gets <code>None</code> and cannot build on the result.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 18. *args and **kwargs -->
+    <section>
+      <h2><span class="eyebrow">Functions</span>Any number of arguments: *args and **kwargs</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">def total(*args):        # extra positionals -> tuple
+    return sum(args)
+
+print(total(2, 4, 6))          # 12
+print(total(1, 2, 3, 4, 5))    # 15
+
+def tag(name, **kwargs):  # extra keywords -> dict
+    return name, kwargs
+
+print(tag("div", id="main", cls="box"))
+# ('div', {'id': 'main', 'cls': 'box'})</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>*args</code> gathers any extra <strong>positional</strong> arguments into a <strong>tuple</strong>.</li>
+              <li><code>**kwargs</code> gathers any extra <strong>keyword</strong> arguments into a <strong>dict</strong>.</li>
+              <li>The names are convention; the <code>*</code> and <code>**</code> do the work.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">Where you will meet it</span>
+              Functions that accept "anything extra" use this. You will pass <code>**kwargs</code> straight through to model and API calls later in the course.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 19. Type hints -->
+    <section>
+      <h2><span class="eyebrow">Type hints</span>Notes about what goes in and out</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">def greet(name: str) -> str:
+    return f"Hello, {name}"
+
+# hints do not run or convert anything
+greet(123)   # still runs; the editor just warns</code></pre>
+          </div>
+          <div class="why">
+            <span class="label">Why now</span>
+            Type hints document what a function expects and returns, and let your editor catch mistakes. They do not change behavior. We seed the habit early because Pydantic (4.3) and tool schemas (Module 5) lean on it.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 20. Wrap -->
+    <section>
+      <h2><span class="eyebrow">Wrap up</span>Your turn, and what is next</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Micro-assignment</div>
+            <ul>
+              <li>Six problems over today's tools, only 1.2 and earlier.</li>
+              <li>Includes cleaning a messy string, comparing two lists with sets, and a dict comprehension.</li>
+              <li>Details in the micro-assignment folder.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Next: class 1.3, Python for real work</div>
+            <ul>
+              <li><strong>Classes</strong>: bundle data with the actions on it.</li>
+              <li><strong>try / except</strong>: handle the expected failures.</li>
+              <li><strong>Files and JSON</strong>: read and write real data.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Reveal.js core and plugins, pinned to 5.1.0 -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#ffffff', primaryTextColor: '#172033',
+      primaryBorderColor: '#2563eb', lineColor: '#2563eb',
+      fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', fontSize: '16px'
+    },
+    flowchart: { nodeSpacing: 45, rankSpacing: 50, htmlLabels: true }
+  });
+  Reveal.initialize({
+    hash: true, slideNumber: 'c/t', width: 1280, height: 720,
+    margin: 0, center: false, transition: 'slide',
+    plugins: [ RevealHighlight, RevealNotes ]
+  }).then(function () {
+    if (window.mermaid) { mermaid.run(); }
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters: [ { left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false } ],
+        throwOnError: false
+      });
+    }
+  });
+</script>
+</body>
+</html>

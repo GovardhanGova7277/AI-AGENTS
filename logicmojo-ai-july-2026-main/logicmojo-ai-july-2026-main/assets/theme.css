@@ -1,0 +1,592 @@
+/* ==========================================================================
+   Shared course theme for all Reveal.js decks
+   GenAI and Agentic AI course
+   ==========================================================================
+   This is the single source of truth for deck styling. Every slides.html in
+   the repo links to this one file, so all decks share one palette, one set of
+   fonts, and one look. Do not restyle individual decks; change this file.
+
+   How a deck uses it (from a class folder three levels below the repo root):
+     <link rel="stylesheet" href="../../../assets/theme.css">
+   Load it AFTER Reveal's own reset.css and reveal.css so these rules win.
+
+   Layout model (16:9, 1280x720, center:false):
+     section            slide, flex column, tinted background, full height
+       h2.band          full-bleed colored title bar at the top
+       .body            padded content area that fills the rest
+   Content sits in white cards (.card, .why, .callout, .tool-card) on the tint
+   so the slide never looks like an empty white page.
+   ========================================================================== */
+
+/* === Palette and design tokens ===========================================
+   One place to change colors. High contrast for projector legibility. */
+:root {
+  --c-ink: #172033;         /* primary text: dark navy-slate */
+  --c-ink-soft: #3f4a63;    /* secondary text */
+  --c-muted: #6b7793;       /* captions, notes */
+  --c-accent: #2563eb;      /* primary accent: blue */
+  --c-accent-dark: #1d4ed8; /* accent emphasis */
+  --c-band-start: #1e3a8a;  /* band / hero start: navy */
+  --c-band-end: #3730a3;    /* band / hero end: deep indigo */
+  --c-line: #d7dcee;        /* hairlines and borders */
+
+  --c-stage: #e5e9f5;       /* deck backdrop, around slides */
+  --c-slide: #eef1fb;       /* slide background tint (not pure white) */
+  --c-card: #ffffff;        /* cards / panels */
+  --c-surface: #f1f4fc;     /* soft panel fill */
+
+  --c-code-bg: #0f172a;     /* code block background: dark slate */
+  --c-code-fg: #e8eefb;     /* code text on dark */
+  --c-good: #15803d;        /* positive / success */
+  --c-warn: #b45309;        /* caution / intentional error */
+
+  /* Band gradient (title bars, hero): navy to indigo */
+  --grad-band: linear-gradient(100deg, var(--c-band-start) 0%, var(--c-band-end) 100%);
+
+  /* Font stacks. System fonts only, so decks render the same offline. */
+  --font-body: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+/* === Reveal core variables (Reveal 5 reads these) ========================= */
+.reveal-viewport {
+  background: var(--c-stage);
+}
+
+.reveal {
+  --r-background-color: var(--c-slide);
+  --r-main-font: var(--font-body);
+  --r-main-font-size: 31px;
+  --r-main-color: var(--c-ink);
+  --r-heading-font: var(--font-body);
+  --r-heading-color: var(--c-ink);
+  --r-heading-margin: 0 0 18px 0;
+  --r-heading-text-transform: none;
+  --r-heading-font-weight: 800;
+  --r-heading1-size: 3.0em;
+  --r-heading2-size: 1.55em;
+  --r-heading3-size: 1.15em;
+  --r-code-font: var(--font-mono);
+  --r-link-color: var(--c-accent);
+  --r-link-color-hover: var(--c-accent-dark);
+  --r-link-color-dark: var(--c-accent-dark);
+  --r-selection-background-color: rgba(37, 99, 235, 0.25);
+  font-weight: 400;
+  letter-spacing: 0.1px;
+}
+
+.reveal .slides { text-align: left; height: 100%; }
+
+/* === Slide shell: title band + body ======================================= */
+/* Reveal toggles each slide's `display` with an inline style, which beats a
+   normal stylesheet rule. So we flex-lay-out only the visible (.present) slide
+   with !important; hidden slides keep Reveal's inline display:none. min-height
+   pins the logical slide height (720) so flex vertical centering has room. */
+.reveal .slides section {
+  box-sizing: border-box;
+  min-height: 720px;
+  padding: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.reveal .slides > section.present {
+  display: flex !important;
+}
+
+/* Full-bleed colored title band */
+.reveal section > h2 {
+  flex: none;
+  margin: 0;
+  padding: 24px 44px;
+  background: var(--grad-band);
+  color: #fff;
+  font-size: var(--r-heading2-size);
+  font-weight: 800;
+  line-height: 1.12;
+  box-shadow: 0 4px 18px rgba(23, 32, 51, 0.18);
+}
+.reveal section > h2 .eyebrow {
+  display: block;
+  font-size: 0.44em;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  margin-bottom: 6px;
+}
+
+/* Padded content region that fills the remaining height. Content is centered
+   in the frame by default so a slide uses the whole page instead of clinging to
+   the top and leaving the lower half blank. Add class "top" to anchor high on
+   the rare slide that needs it. */
+.reveal .body {
+  flex: 1;
+  min-height: 0;
+  padding: 34px 48px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+}
+.reveal .body.top { justify-content: flex-start; }
+.reveal .body.center { justify-content: center; }
+/* A lone figure as the main content grows to fill the frame instead of sitting
+   small in the middle. Slides that want this pair a figure-wrap directly in body. */
+.reveal .body > .figure-wrap { flex: 1 1 auto; min-height: 0; }
+
+/* Intro line under a band, before bullets or cards */
+.reveal .body .stmt {
+  font-size: 1.12em;
+  color: var(--c-ink);
+  font-weight: 400;   /* normal: a lead line is larger, not bold; bold is reserved for <strong> highlights */
+  margin: 0;
+}
+
+/* === Lists and bullets ==================================================== */
+.reveal .body ul { list-style: none; margin: 0; padding: 0; }
+.reveal .body ul li {
+  position: relative;
+  padding-left: 1.5em;
+  margin: 0.62em 0;
+  line-height: 1.45;
+  font-size: 1.07em;
+}
+.reveal .body ul li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 0.55em;
+  height: 0.55em;
+  background: var(--c-accent);
+  border-radius: 3px;
+}
+.reveal .body ul li strong { color: var(--c-ink); }
+.reveal .body ul.tight li { margin: 0.3em 0; }
+
+/* === Title (hero) slide =================================================== */
+.reveal section.title {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0 8%;
+  color: #fff;
+}
+.reveal section.title h1 {
+  font-size: var(--r-heading1-size);
+  color: #fff;
+  margin: 0 0 22px;
+  line-height: 1.05;
+  text-shadow: 0 3px 20px rgba(0, 0, 0, 0.18);
+}
+.reveal section.title .kicker {
+  display: inline-block;
+  font-size: 0.62em;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 8px 18px;
+  border-radius: 30px;
+  margin-bottom: 30px;
+}
+.reveal section.title .lead {
+  font-size: 1.2em;
+  color: rgba(255, 255, 255, 0.94);
+  max-width: 24em;
+  margin: 0 auto;
+  line-height: 1.45;
+}
+
+/* === Cards and panels ===================================================== */
+.reveal .card {
+  background: var(--c-card);
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  padding: 22px 26px;
+  box-shadow: 0 8px 24px rgba(23, 32, 51, 0.08);
+}
+
+.reveal .cols { display: grid; gap: 22px; align-items: stretch; }
+.reveal .cols-2 { grid-template-columns: 1fr 1fr; }
+.reveal .cols-3 { grid-template-columns: repeat(3, 1fr); }
+.reveal .cols-5 { grid-template-columns: repeat(5, 1fr); }
+.reveal .col-label {
+  font-weight: 700;
+  color: var(--c-accent);
+  margin-bottom: 8px;
+  font-size: 0.95em;
+}
+
+/* === Tool overview cards (the "toolkit" slide) ============================ */
+.reveal .tool-card {
+  background: var(--c-card);
+  border: 1px solid var(--c-line);
+  border-top: 4px solid var(--c-accent);
+  border-radius: 12px;
+  padding: 18px 16px;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(23, 32, 51, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.reveal .tool-card .icon { margin: 0 auto; }
+.reveal .tool-card .name { font-weight: 800; font-size: 1.0em; }
+.reveal .tool-card .one-liner { font-size: 0.82em; color: var(--c-ink-soft); line-height: 1.3; }
+
+/* Icon badge (inline SVG sits inside) */
+.reveal .icon {
+  width: 54px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  color: var(--c-accent);
+}
+.reveal .icon svg { width: 30px; height: 30px; }
+.reveal .icon.lg { width: 76px; height: 76px; border-radius: 18px; }
+.reveal .icon.lg svg { width: 42px; height: 42px; }
+
+/* === Tool detail slide: icon + points + example =========================== */
+.reveal .tool-detail { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 26px; align-items: center; height: 100%; }
+.reveal .tool-detail .lead-in { display: flex; align-items: center; gap: 18px; margin-bottom: 6px; }
+.reveal .tool-detail .lead-in .what { font-size: 1.08em; font-weight: 600; color: var(--c-ink); }
+
+/* "Why it matters" emphasis note */
+.reveal .why {
+  border-left: 5px solid var(--c-accent);
+  background: var(--c-surface);
+  padding: 16px 22px;
+  border-radius: 0 12px 12px 0;
+}
+.reveal .why .label,
+.reveal .callout .label,
+.reveal .analogy .label {
+  display: block;
+  font-size: 0.62em;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  margin-bottom: 6px;
+}
+
+/* Analogy panel (soft, friendly) */
+.reveal .analogy {
+  background: var(--c-card);
+  border: 1px dashed var(--c-accent);
+  border-radius: 12px;
+  padding: 18px 22px;
+  color: var(--c-ink-soft);
+}
+.reveal .analogy .label { color: var(--c-accent-dark); }
+
+/* Misconception callout */
+.reveal .callout {
+  background: #fff7ec;
+  border: 1px solid #f0d9b5;
+  border-radius: 12px;
+  padding: 16px 22px;
+  line-height: 1.6;   /* room so inline-code chips on wrapped lines never touch */
+}
+.reveal .callout .label { color: var(--c-warn); }
+
+/* Vertical rhythm: when a statement, callout, analogy, or list sits directly
+   next to another such block, give it a gap so text never sits flush against a
+   box. Inline margin styles still override this for fine-tuned cases. */
+.reveal .body .stmt + .stmt,
+.reveal .body .stmt + p,
+.reveal .body p + .stmt,
+.reveal .body p + p,
+.reveal .body .stmt + .callout,
+.reveal .body .stmt + .analogy,
+.reveal .body .stmt + ul,
+.reveal .body p + .callout,
+.reveal .body ul + .callout,
+.reveal .body .callout + .callout,
+.reveal .body .callout + .stmt,
+.reveal .body .callout + ul,
+.reveal .body .callout + p,
+.reveal .body .analogy + .stmt { margin-top: 14px; }
+
+/* === Venn diagrams (set operations) ====================================== */
+.reveal .venn-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: flex-start;
+}
+.reveal .venn-item { text-align: center; }
+.reveal .venn-item svg { width: 158px; height: 96px; }
+.reveal .venn-item .cap {
+  margin-top: 6px;
+  font-size: 0.8em;
+  color: var(--c-ink-soft);
+}
+.reveal .venn-item .cap strong { color: var(--c-ink); }
+.reveal .venn .circle-a { fill: rgba(37, 99, 235, 0.12); stroke: var(--c-accent); stroke-width: 2; }
+.reveal .venn .circle-b { fill: rgba(55, 48, 163, 0.12); stroke: var(--c-band-end); stroke-width: 2; }
+.reveal .venn .shade { fill: var(--c-accent); opacity: 0.5; }
+.reveal .venn .erase { fill: var(--c-slide); }
+.reveal .venn .lbl { fill: var(--c-ink); font-size: 15px; font-weight: 700; }
+
+/* === Code blocks ========================================================== */
+.reveal pre {
+  width: 100%;
+  margin: 0;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.22);
+  border-radius: 12px;
+  font-size: 0.92em;   /* one legible size for all code, everywhere */
+  line-height: 1.55;
+}
+.reveal pre code {
+  background: var(--c-code-bg);
+  color: var(--c-code-fg);
+  border-radius: 12px;
+  padding: 22px 26px;
+  max-height: none;
+  overflow: visible;
+  -webkit-font-smoothing: auto;
+  tab-size: 4;
+}
+/* All code uses the base 0.92em size; this class is kept for authoring clarity. */
+.reveal .code-lg pre { font-size: 0.92em; }
+/* Small caption above a code block */
+.reveal .code-cap {
+  font-weight: 700;
+  color: var(--c-accent);
+  font-size: 0.9em;
+  margin-bottom: 8px;
+}
+/* Inline code inside prose */
+.reveal :not(pre) > code {
+  font-family: var(--font-mono);
+  background: var(--c-surface);
+  color: var(--c-accent-dark);
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+/* Two-up code (broken vs fixed, etc.), still legible */
+.reveal .code-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+
+/* === Mermaid (left-to-right module path) ================================== */
+.reveal .mermaid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+.reveal .mermaid svg { max-width: 100%; max-height: 100%; height: auto; }
+.reveal .path-caption {
+  text-align: center;
+  color: var(--c-ink-soft);
+  font-size: 0.95em;
+  margin-top: 10px;
+}
+
+/* === Journey timeline + practice panel (module roadmap slide) ============= */
+.reveal .path-layout {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 34px;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+.reveal .journey { display: flex; flex-direction: column; gap: 2px; }
+.reveal .step { display: flex; align-items: center; gap: 16px; padding: 7px 0; position: relative; }
+.reveal .step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 46px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--c-line);
+}
+.reveal .step-num {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--grad-band);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(23, 32, 51, 0.18);
+  z-index: 1;
+}
+.reveal .step-title { font-weight: 700; color: var(--c-ink); line-height: 1.15; }
+.reveal .step-note { display: block; color: var(--c-ink-soft); font-size: 0.8em; }
+
+.reveal .practice {
+  background: var(--c-card);
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 8px 24px rgba(23, 32, 51, 0.08);
+}
+.reveal .practice .col-label { margin-bottom: 14px; }
+.reveal .pill {
+  background: var(--c-surface);
+  border-left: 4px solid var(--c-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  font-size: 0.9em;
+  color: var(--c-ink);
+  line-height: 1.35;
+}
+.reveal .pill .pill-tag {
+  display: block;
+  font-size: 0.66em;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  margin-bottom: 3px;
+}
+.reveal .practice .note { color: var(--c-muted); font-size: 0.8em; margin: 4px 0 0; }
+
+/* === KaTeX sizing (wired for later classes) =============================== */
+.reveal .katex { font-size: 1.05em; }
+
+/* === Footer / slide number ================================================ */
+.reveal .slide-number {
+  background: transparent;
+  color: var(--c-muted);
+  font-size: 15px;
+}
+.reveal .deck-footer {
+  position: fixed;
+  bottom: 12px;
+  left: 20px;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  color: var(--c-muted);
+  z-index: 30;
+}
+
+/* ==========================================================================
+   Module 2 additions: data table, three-box split, and figure helpers.
+   New classes only, so existing decks are unaffected.
+   ========================================================================== */
+
+/* Feature/label style data table (2.1) */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92em;
+  margin: 4px 0 0;
+}
+.data-table th, .data-table td {
+  border: 1px solid var(--c-line);
+  padding: 10px 14px;
+  text-align: center;
+}
+.data-table thead th {
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font-weight: 700;
+}
+.data-table tbody td:last-child {
+  color: var(--c-accent);
+  font-weight: 700;
+}
+
+/* Grid-based table (div grid, not a <table>). Renders identically across
+   browsers/OSes and cannot collapse into stacked rows the way some managed
+   or high-contrast setups do to real <table> elements. Set the column count
+   inline: style="grid-template-columns: repeat(N, 1fr)". Cells are divs;
+   header cells use .gt-head, an accent cell uses .gt-accent. The 1px gap over
+   a line-colored background draws crisp, uniform grid lines. */
+/* Pin bold to a concrete weight. The reset normalizes <strong>/<b> to
+   'bolder', which resolves against the inherited weight and can render barely
+   heavier (or not at all) in some contexts, such as grid cells. Force 700. */
+.reveal strong, .reveal b { font-weight: 700; }
+
+.grid-table {
+  display: grid;
+  gap: 1px;
+  background: var(--c-line);
+  border: 1px solid var(--c-line);
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  font-size: 0.92em;
+  margin: 4px 0 0;
+}
+.grid-table > div {
+  background: var(--c-card);
+  color: var(--c-ink);
+  padding: 10px 14px;
+  text-align: center;
+  /* Block, not flex or grid: those turn inline children (<strong>, <code>) into
+     separate flex/grid items and drop the whitespace between them, so
+     "the <strong>bank</strong> of" renders as "thebankof". A block cell keeps the
+     inline run intact (whitespace preserved). Grid items still stretch, so the
+     1px line grid holds. align-content centers the text vertically on modern
+     browsers and is harmlessly ignored on older ones (falls back to top). */
+  display: block;
+  align-content: center;
+}
+.grid-table .gt-head {
+  background: var(--c-surface);
+  font-weight: 700;
+}
+.grid-table .gt-accent {
+  color: var(--c-accent);
+  font-weight: 700;
+}
+/* High-contrast / forced-colors: backgrounds are ignored, so draw real cell
+   borders instead of relying on the gap-over-background line trick. */
+@media (forced-colors: active) {
+  .grid-table { gap: 0; background: transparent; }
+  .grid-table > div { border: 1px solid; }
+}
+
+/* Three (or more) equal boxes in a row: train / validation / test, etc. */
+.split-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 22px;
+}
+.split-box {
+  border: 1px solid var(--c-line);
+  border-left: 4px solid var(--c-accent);
+  border-radius: 10px;
+  background: var(--c-card);
+  padding: 16px 18px;
+}
+.split-box p { margin: 6px 0 0; font-size: 0.95em; color: var(--c-ink-soft); }
+
+/* Centered figure holder for inline SVG charts and diagrams */
+.figure-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 4px 0;
+}
+.figure-wrap svg { max-width: 100%; height: auto; max-height: 100%; }
+/* A figure sharing a row with a text column must not outgrow the frame height.
+   Cap it below the usable body height so a tall aspect ratio letterboxes to fit
+   instead of spilling past the slide. */
+.reveal .cols .figure-wrap svg { max-height: 430px; }
+
+/* SVG text roles used by inline charts */
+.axlbl { font-size: 13px; fill: var(--c-ink-soft); font-family: var(--font-body); }
+.zone  { font-size: 13px; fill: var(--c-muted); font-weight: 700; font-family: var(--font-body); }
+.leg   { font-size: 13px; fill: var(--c-ink); font-family: var(--font-body); }

@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class 2.2 - How models learn</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="../../../assets/theme.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="deck-footer">GenAI and Agentic AI &middot; Module 2 &middot; Class 2.2</div>
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section class="title" data-background-gradient="linear-gradient(120deg, #1e3a8a 0%, #3730a3 55%, #312e81 100%)">
+      <span class="kicker">Module 2 &middot; ML and DL essentials &middot; Class 2.2</span>
+      <h1>How models learn</h1>
+      <p class="lead">Open the black box. Measure how wrong you are, find the downhill direction, take a small step, and repeat until the loss stops falling.</p>
+    </section>
+
+    <!-- 2. Today's road -->
+    <section>
+      <h2><span class="eyebrow">Today</span>The road for this class</h2>
+      <div class="body">
+        <div class="path-layout">
+          <div class="journey">
+            <div class="step"><div class="step-num">1</div><div><div class="step-title">What "learning" adjusts<span class="step-note">A model is a function with weights. Learning sets them.</span></div></div></div>
+            <div class="step"><div class="step-num">2</div><div><div class="step-title">Loss: how wrong are we<span class="step-note">One number per task. MSE for regression, cross-entropy for classification.</span></div></div></div>
+            <div class="step"><div class="step-num">3</div><div><div class="step-title">The slope and the gradient<span class="step-note">Which way is downhill, and how steep.</span></div></div></div>
+            <div class="step"><div class="step-num">4</div><div><div class="step-title">The step and the learning rate<span class="step-note">Move downhill; the step size decides everything.</span></div></div></div>
+            <div class="step"><div class="step-num">5</div><div><div class="step-title">Flavors of descent, then the loop<span class="step-note">How much data per step, and the full cycle.</span></div></div></div>
+          </div>
+          <div class="practice">
+            <div class="col-label">Why this matters</div>
+            <div class="pill"><span class="pill-tag">One engine</span>This loop, gradient descent, trains every model in the course: the classifiers here, the transformers in Module 3 (NLP to Transformers), and the fine-tuned LLMs in Module 4 (LLMs and GenAI).</div>
+            <div class="pill"><span class="pill-tag">Primer check</span>You only need two ideas from the primer today: a slope is how fast a value changes, and a gradient points uphill.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. A model is a function with weights -->
+    <section>
+      <h2><span class="eyebrow">What learning adjusts</span>A model is a function with weights</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 760 120" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:150px" font-family="Segoe UI, Arial, sans-serif">
+            <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+            <rect x="20" y="35" width="150" height="50" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/>
+            <text x="95" y="65" text-anchor="middle" font-size="17" fill="#172033">features x</text>
+            <line x1="170" y1="60" x2="286" y2="60" stroke="#2563eb" stroke-width="2" marker-end="url(#ar)"/>
+            <rect x="290" y="28" width="230" height="64" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/>
+            <text x="405" y="52" text-anchor="middle" font-size="18" fill="#172033">prediction = w &middot; x + b</text>
+            <text x="405" y="76" text-anchor="middle" font-size="13" fill="#6b7793">the weights w and bias b</text>
+            <line x1="520" y1="60" x2="636" y2="60" stroke="#2563eb" stroke-width="2" marker-end="url(#ar)"/>
+            <rect x="640" y="35" width="110" height="50" rx="8" fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"/>
+            <text x="695" y="65" text-anchor="middle" font-size="17" fill="#172033">prediction</text>
+          </svg>
+        </div>
+        <div class="cols cols-2" style="margin-top:10px">
+          <div><ul class="tight">
+            <li>Picture each weight as a dial the model can turn; learning finds the settings.</li>
+            <li>You choose the model's <strong>family</strong> (its architecture). Within that family, the <strong>weights</strong> decide the exact function it computes.</li>
+            <li>A straight line can only draw lines; a neural network can bend into almost any shape. Both still learn the same way: by tuning weights.</li>
+            <li>To learn is to search for the weights that make predictions match reality.</li>
+          </ul></div>
+          <div class="analogy"><span class="label">Scale is the only difference</span>This toy line has two weights. A large language model is the same idea with billions of them, turned by the same procedure you learn today.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Learning is a guided search -->
+    <section>
+      <h2><span class="eyebrow">What learning adjusts</span>Learning is a guided search</h2>
+      <div class="body">
+        <p class="stmt">We cannot try every possible setting of the weights. Even two weights give infinite combinations, and real models have millions.</p>
+        <div class="cols cols-2">
+          <div class="callout"><span class="label">The problem</span>Random guessing will never find good weight values in a space this large.</div>
+          <div class="callout"><span class="label">The idea</span>Measure how wrong the current guess is, then change the weights in the direction that reduces it. Repeat. That needs two tools: a score for wrongness, and a direction.</div>
+        </div>
+        <p class="stmt" style="margin-top:2px">The score is the loss. The direction is the gradient. The rest of the class is those two.</p>
+      </div>
+    </section>
+
+    <!-- 5. Loss idea -->
+    <section>
+      <h2><span class="eyebrow">Loss</span>A single number for how wrong</h2>
+      <div class="body">
+        <p class="stmt">To improve, the model needs a score of how wrong it is right now. That score is the loss. Lower is better; zero would be perfect.</p>
+        <div class="analogy">
+          <span class="label">Think of it as</span>
+          Your total miss distance in target practice. Add up how far every shot lands from the bullseye, and one number tells you how badly you are shooting. Every adjustment to your aim is an attempt to shrink it. The model plays the same game against its own errors.
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. MSE decoded -->
+    <section>
+      <h2><span class="eyebrow">Loss for regression</span>Mean squared error, decoded</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div>
+            <p class="stmt">$$ L = \frac{1}{n}\sum_{i}\left(\hat{y}_i - y_i\right)^2 $$</p>
+            <div class="callout" style="margin-top:12px"><span class="label">The default for regression</span>When the label is a number, MSE is the standard loss. Squaring punishes big misses hard, and the curve is smooth, which is exactly what descent needs.</div>
+          </div>
+          <div>
+            <ul class="tight">
+              <li>\( L \) is the loss, one number for total wrongness.</li>
+              <li>\( n \) is how many examples we score.</li>
+              <li>\( y_i \) is the true answer for example \( i \).</li>
+              <li>\( \hat{y}_i \) is the model's prediction for example \( i \).</li>
+              <li>\( \hat{y}_i - y_i \) is the error on one example.</li>
+              <li>\( (\,\cdot\,)^2 \) makes it positive and weighs big misses more.</li>
+              <li>\( \frac{1}{n}\sum \) averages the per-example errors.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. MSE worked -->
+    <section>
+      <h2><span class="eyebrow">Loss for regression</span>MSE on three examples</h2>
+      <div class="body">
+        <div class="grid-table" style="grid-template-columns: repeat(4, 1fr)">
+          <div class="gt-head">prediction (y-hat)</div><div class="gt-head">truth (y)</div><div class="gt-head">error</div><div class="gt-head">error squared</div>
+          <div>3.0</div><div>2.5</div><div>+0.5</div><div>0.25</div>
+          <div>5.0</div><div>5.5</div><div>-0.5</div><div>0.25</div>
+          <div>2.0</div><div>4.0</div><div>-2.0</div><div class="gt-accent">4.00</div>
+        </div>
+        <div class="cols cols-2" style="margin-top:18px">
+          <div class="callout"><span class="label">Average the last column</span>(0.25 + 0.25 + 4.00) / 3 = <strong>1.50</strong>. That is the loss.</div>
+          <div class="callout"><span class="label">See the squaring bite</span>The one big miss of 2.0 contributes 4.00, more than the two small misses combined. Big errors dominate on purpose.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Loss vs metric -->
+    <section>
+      <h2><span class="eyebrow">A key distinction</span>Loss is not the same as a metric</h2>
+      <div class="body">
+        <p class="stmt">People mix these up. They answer different questions.</p>
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Loss: what you optimize</div>
+            <ul class="tight">
+              <li>Drives training; the thing descent pushes down.</li>
+              <li>Must be smooth so it has a slope to follow.</li>
+              <li>Machine-facing. Examples: MSE, cross-entropy.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Metric: what you report</div>
+            <ul class="tight">
+              <li>What you and stakeholders actually care about.</li>
+              <li>Can be blunt or non-smooth; that is fine to read.</li>
+              <li>Human-facing. Examples: accuracy, precision, recall, MAE in dollars.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout"><span class="label">Why the confusion</span>You often train on one and judge on the other: minimize cross-entropy, report accuracy. MSE is the tricky case, it is a valid loss and a common regression metric, so the two roles overlap there.</div>
+      </div>
+    </section>
+
+    <!-- 9. Loss vs accuracy smoothness -->
+    <section>
+      <h2><span class="eyebrow">Why optimize loss</span>Loss is smooth; accuracy is blunt</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <ul>
+              <li><strong>Accuracy</strong> counts right answers. It jumps in steps and does not move when a prediction improves slightly, so it gives no direction to follow.</li>
+              <li><strong>Loss</strong> shifts with every tiny change in the weights. That smoothness is exactly what lets us find a downhill direction.</li>
+            </ul>
+            <p class="stmt" style="margin-top:10px">So we minimize a smooth loss in order to improve the metric we care about.</p>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 420 240" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+              <text x="120" y="28" text-anchor="middle" class="zone">accuracy</text>
+              <text x="320" y="28" text-anchor="middle" class="zone">loss</text>
+              <line x1="40" y1="200" x2="220" y2="200" stroke="#6b7793"/><line x1="40" y1="55" x2="40" y2="200" stroke="#6b7793"/>
+              <polyline points="45,180 90,180 90,140 140,140 140,95 195,95" fill="none" stroke="#b45309" stroke-width="3"/>
+              <text x="130" y="226" text-anchor="middle" class="axlbl">jumps in steps</text>
+              <line x1="250" y1="200" x2="410" y2="200" stroke="#6b7793"/><line x1="250" y1="55" x2="250" y2="200" stroke="#6b7793"/>
+              <path d="M258,72 C300,150 345,190 405,196" fill="none" stroke="#15803d" stroke-width="3"/>
+              <text x="330" y="226" text-anchor="middle" class="axlbl">moves with every nudge</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. From score to probability: the sigmoid -->
+    <section>
+      <h2><span class="eyebrow">Loss for classification</span>From a score to a probability: the sigmoid</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">In binary classification we want \( y \approx f(x) \) where \( f(x) \) lands in [0, 1], a real probability. But a weighted sum \( w\cdot x + b \) can be any number. The <strong>sigmoid</strong> squashes it into range.</p>
+            <p class="stmt" style="margin-top:8px">$$ \sigma(z) = \frac{1}{1 + e^{-z}} $$</p>
+            <ul class="tight">
+              <li>\( z = w\cdot x + b \) is the raw score, any real number.</li>
+              <li>Large positive \( z \) gives \( \sigma \) near 1; large negative near 0; \( z = 0 \) gives 0.5.</li>
+              <li>Read \( \sigma(z) \) as \( p \), the probability the label is 1.</li>
+            </ul>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 420 250" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+              <line x1="60" y1="40" x2="60" y2="210" stroke="#6b7793" stroke-width="1.5"/>
+              <line x1="60" y1="210" x2="392" y2="210" stroke="#6b7793" stroke-width="1.5"/>
+              <line x1="60" y1="125" x2="392" y2="125" stroke="#c3d0ee" stroke-width="1" stroke-dasharray="4 3"/>
+              <text x="400" y="129" class="leg" fill="#6b7793" font-size="12">0.5</text>
+              <text x="226" y="240" text-anchor="middle" class="axlbl">raw score z</text>
+              <text x="22" y="128" text-anchor="middle" class="axlbl" transform="rotate(-90 22 128)">probability</text>
+              <path d="M60,209 L115,207 L170,190 L197,164 L225,125 L253,86 L280,60 L335,43 L390,41" fill="none" stroke="#2563eb" stroke-width="3"/>
+              <circle cx="225" cy="125" r="4" fill="#15803d"/>
+              <text x="150" y="201" class="leg" fill="#6b7793">near 0</text>
+              <text x="300" y="58" class="leg" fill="#6b7793">near 1</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Why MSE breaks on classification -->
+    <section>
+      <h2><span class="eyebrow">Loss for classification</span>Why MSE breaks on classification</h2>
+      <div class="body">
+        <p class="stmt">Now we hold a probability \( p \) from the sigmoid. Score it against a 0/1 label with MSE and two problems appear.</p>
+        <div class="cols cols-2">
+          <div class="callout"><span class="label">The penalty is too gentle</span>Being confidently wrong (predict 0.01 when the truth is 1) costs at most about 1 under MSE. A blunder and a near miss look almost the same.</div>
+          <div class="callout"><span class="label">The signal goes flat</span>Near a confident wrong answer the MSE curve is nearly flat, so its slope is tiny and the model barely learns from its worst mistakes.</div>
+        </div>
+        <p class="stmt" style="margin-top:2px">We want a loss that makes confident-and-wrong hurt enormously. That loss is cross-entropy.</p>
+      </div>
+    </section>
+
+    <!-- 11. BCE decoded -->
+    <section>
+      <h2><span class="eyebrow">Loss for classification</span>Binary cross-entropy, decoded</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div>
+            <p class="stmt">$$ L = -\frac{1}{n}\sum_{i}\left[\,y_i\log(p_i) + (1-y_i)\log(1-p_i)\,\right] $$</p>
+            <div class="callout" style="margin-top:12px"><span class="label">Only one term survives</span>If the truth is 1, the second term is zero and the loss is <strong>minus log p</strong>. If the truth is 0, the first term is zero and the loss is <strong>minus log (1 minus p)</strong>.</div>
+          </div>
+          <div>
+            <ul class="tight">
+              <li>\( y_i \) is the true label, 0 or 1.</li>
+              <li>\( p_i \) is the predicted probability that the label is 1.</li>
+              <li>\( \log \) is the natural logarithm.</li>
+              <li>\( -\log(p) \) is small when \( p \) is near 1 and shoots to infinity as \( p \to 0 \).</li>
+              <li>So it rewards confident-correct and savagely punishes confident-wrong.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. CE vs MSE by numbers -->
+    <section>
+      <h2><span class="eyebrow">Loss for classification</span>Cross-entropy versus MSE, by the numbers</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt" style="margin-bottom:10px">True label is 1. Compare a confident-right guess with a confident-wrong one.</p>
+            <div class="grid-table" style="grid-template-columns: 1fr 1fr 1.2fr">
+              <div class="gt-head">prediction p</div><div class="gt-head">MSE (1 - p)^2</div><div class="gt-head">cross-entropy -log p</div>
+              <div>0.9 (right)</div><div>0.01</div><div>0.11</div>
+              <div>0.1 (wrong)</div><div>0.81</div><div class="gt-accent">2.30</div>
+            </div>
+            <div class="callout" style="margin-top:12px"><span class="label">Read the gap</span>MSE grows from 0.01 to 0.81. Cross-entropy explodes from 0.11 to 2.30, a far louder signal that the model was confidently wrong.</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+              <line x1="60" y1="40" x2="60" y2="220" stroke="#6b7793" stroke-width="1.5"/>
+              <line x1="60" y1="220" x2="395" y2="220" stroke="#6b7793" stroke-width="1.5"/>
+              <text x="227" y="250" text-anchor="middle" class="axlbl">p for the true class</text>
+              <text x="24" y="130" text-anchor="middle" class="axlbl" transform="rotate(-90 24 130)">-log p</text>
+              <path d="M76,40 L93,82 L126,123 L159,148 L225,179 L291,199 L357,214 L390,220" fill="none" stroke="#2563eb" stroke-width="3"/>
+              <circle cx="357" cy="214" r="5" fill="#15803d"/><text x="349" y="206" text-anchor="end" class="leg" fill="#15803d">p=0.9</text>
+              <circle cx="93" cy="82" r="5" fill="#be123c"/><text x="103" y="80" class="leg" fill="#be123c">p=0.1</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Landscape -->
+    <section>
+      <h2><span class="eyebrow">Gradient</span>Picture the loss as a landscape</h2>
+      <div class="body">
+        <p class="stmt">Every setting of the weights is a position on a hilly surface. The height is the loss. We are hunting for the lowest valley.</p>
+        <div class="analogy">
+          <span class="label">The foggy hillside</span>
+          You cannot see the whole landscape through the fog, but you can feel the slope under your feet. Step downhill, again and again, and you reach a valley without ever seeing the map.
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. Read the slope -->
+    <section>
+      <h2><span class="eyebrow">Gradient</span>Read the slope: which way is downhill</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:430px">
+            <path d="M60,60 Q240,420 420,60" fill="none" stroke="#2563eb" stroke-width="3"/>
+            <text x="240" y="288" text-anchor="middle" class="axlbl">a weight</text>
+            <text x="24" y="160" text-anchor="middle" class="axlbl" transform="rotate(-90 24 160)">loss</text>
+            <line x1="110" y1="151" x2="170" y2="218" stroke="#b45309" stroke-width="2.5"/>
+            <circle cx="140" cy="184" r="6" fill="#172033"/>
+            <line x1="150" y1="205" x2="192" y2="205" stroke="#15803d" stroke-width="2.5" marker-end="url(#dh)"/>
+            <line x1="310" y1="218" x2="370" y2="151" stroke="#b45309" stroke-width="2.5"/>
+            <circle cx="340" cy="184" r="6" fill="#172033"/>
+            <line x1="330" y1="205" x2="288" y2="205" stroke="#15803d" stroke-width="2.5" marker-end="url(#dh)"/>
+            <text x="240" y="250" text-anchor="middle" class="leg" fill="#15803d">step opposite the slope</text>
+            <defs><marker id="dh" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#15803d"/></marker></defs>
+          </svg>
+        </div>
+        <p class="stmt" style="margin-top:2px">The tangent is the slope at your feet. Slope tilts up to the right means step left; up to the left means step right. Either way, move opposite the slope.</p>
+      </div>
+    </section>
+
+    <!-- 15. Gradient is uphill -->
+    <section>
+      <h2><span class="eyebrow">Gradient</span>The gradient points uphill</h2>
+      <div class="body">
+        <p class="stmt">The gradient of the loss is the direction that increases it fastest, the steepest way up. To reduce the loss, we step the exact opposite way.</p>
+        <div class="callout"><span class="label">One move</span>Compute the gradient (steepest up), then go the other direction (steepest down). In one dimension that is just the slope; the gradient is the same idea for many weights at once.</div>
+      </div>
+    </section>
+
+    <!-- 16. Millions of weights -->
+    <section>
+      <h2><span class="eyebrow">Gradient</span>Millions of weights, tuned together</h2>
+      <div class="body">
+        <p class="stmt">$$ \nabla L = \left[\frac{\partial L}{\partial w_1},\ \frac{\partial L}{\partial w_2},\ \dots,\ \frac{\partial L}{\partial w_m}\right] $$</p>
+        <div class="cols cols-2">
+          <div class="analogy"><span class="label">Reading the symbol</span>
+            \( \dfrac{\partial L}{\partial w_j} \) is the <strong>partial derivative</strong> of the loss with respect to one weight: how much \( L \) changes when you nudge only \( w_j \) a little and hold every other weight fixed. It is just a slope, measured along that one weight's axis. The curly \( \partial \) signals "one variable at a time."
+          </div>
+          <div class="card">
+            <div class="col-label">A tiny example</div>
+            <p class="stmt" style="margin:0 0 6px">$$ L = w_1^{2} + 3\,w_2 $$</p>
+            <ul class="tight">
+              <li>\( \frac{\partial L}{\partial w_1} = 2w_1 \), treating \( w_2 \) as constant.</li>
+              <li>\( \frac{\partial L}{\partial w_2} = 3 \), treating \( w_1 \) as constant.</li>
+              <li>At \( (w_1, w_2) = (2, 5) \): \( \nabla L = [\,4,\ 3\,] \).</li>
+            </ul>
+          </div>
+        </div>
+        <div class="cols cols-2">
+          <div><ul class="tight">
+            <li>The gradient is a <strong>list of slopes</strong>, one per weight.</li>
+            <li>One step nudges <strong>every</strong> weight at once, each opposite its own slope.</li>
+            <li>A large model does this for billions of weights per step.</li>
+          </ul></div>
+          <div class="callout"><span class="label">You do not compute these by hand</span>An automatic method (backpropagation, seen in class 2.3, Neural networks) fills in every slope for you. Today, just hold the picture.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17. Update rule -->
+    <section>
+      <h2><span class="eyebrow">Gradient</span>The update rule, decoded</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div>
+            <p class="stmt">$$ \theta_{\text{new}} = \theta_{\text{old}} - \eta\,\nabla_\theta L $$</p>
+          </div>
+          <div>
+            <ul>
+              <li>\( \theta \) (theta) is one weight (a parameter).</li>
+              <li><strong>grad L</strong> is the gradient of the loss for that weight: the steepest-up direction.</li>
+              <li>The <strong>minus sign</strong> flips it to downhill.</li>
+              <li>\( \eta \) (eta) is the learning rate, how big a step we take.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout"><span class="label">Read it aloud</span>New weight equals old weight, minus a small step in the downhill direction.</div>
+      </div>
+    </section>
+
+    <!-- 18. Rolling ball, animated -->
+    <section>
+      <h2><span class="eyebrow">Gradient</span>Rolling to the bottom</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:440px">
+            <path d="M60,50 Q280,450 500,50" fill="none" stroke="#2563eb" stroke-width="3"/>
+            <text x="280" y="300" text-anchor="middle" class="axlbl">a weight</text>
+            <text x="28" y="170" text-anchor="middle" class="axlbl" transform="rotate(-90 28 170)">loss</text>
+            <g fill="#b45309" opacity="0.25">
+              <circle cx="113" cy="134" r="6"/><circle cx="170" cy="200" r="6"/><circle cx="218" cy="234" r="6"/><circle cx="254" cy="247" r="6"/>
+            </g>
+            <text x="113" y="120" text-anchor="middle" class="leg">start</text>
+            <text x="280" y="272" text-anchor="middle" class="zone" fill="#15803d">minimum</text>
+            <g>
+              <circle cx="0" cy="0" r="11" fill="#b45309"/>
+              <animateTransform attributeName="transform" type="translate"
+                values="113,134; 170,200; 218,234; 254,247; 271,250; 280,250; 280,250"
+                keyTimes="0;0.16;0.32;0.46;0.60;0.74;1" dur="3.6s" repeatCount="indefinite"/>
+            </g>
+          </svg>
+        </div>
+        <p class="stmt" style="margin-top:2px">Each step moves opposite the slope. The steps shrink near the bottom, where the slope flattens out.</p>
+      </div>
+    </section>
+
+    <!-- 19. Descent by the numbers -->
+    <section>
+      <h2><span class="eyebrow">Gradient</span>A descent, by the numbers</h2>
+      <div class="body">
+        <p class="stmt">Minimize <strong>f(x) = (x - 3)^2</strong>, whose slope is <strong>2(x - 3)</strong>, from x = 0 with learning rate 0.3. Watch x march toward 3.</p>
+        <div class="grid-table" style="grid-template-columns: 0.6fr 1fr 1.2fr 1.8fr">
+          <div class="gt-head">step</div><div class="gt-head">x</div><div class="gt-head">slope 2(x-3)</div><div class="gt-head">next x = x - 0.3 &middot; slope</div>
+          <div>0</div><div>0.00</div><div>-6.00</div><div>1.80</div>
+          <div>1</div><div>1.80</div><div>-2.40</div><div>2.52</div>
+          <div>2</div><div>2.52</div><div>-0.96</div><div>2.81</div>
+          <div>3</div><div>2.81</div><div>-0.38</div><div>2.92</div>
+          <div>4</div><div>2.92</div><div>-0.15</div><div>2.97</div>
+        </div>
+        <div class="callout" style="margin-top:14px"><span class="label">The step shrinks itself</span>As x nears 3 the slope shrinks, so each move gets smaller and x settles at the minimum without overshooting.</div>
+      </div>
+    </section>
+
+    <!-- 20. Learning rate -->
+    <section>
+      <h2><span class="eyebrow">Learning rate</span>How big a step</h2>
+      <div class="body">
+        <p class="stmt">The learning rate \( \eta \) (eta) sets the step size, and it is the dial you will tune most often.</p>
+        <div class="cols cols-2">
+          <div class="card"><div class="col-label">The two failure modes</div><ul class="tight">
+            <li>Too small: learning crawls and takes forever.</li>
+            <li>Too large: you overshoot the valley and can bounce or blow up.</li>
+          </ul></div>
+          <div class="card"><div class="col-label">The goal</div><ul class="tight">
+            <li>A rate large enough to make real progress each step.</li>
+            <li>Small enough to stay stable and actually settle.</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 21. Steps on the bowl -->
+    <section>
+      <h2><span class="eyebrow">Learning rate</span>Same bowl, three step sizes</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 660 250" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:400px">
+            <path d="M20,45 Q100,225 180,45" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+            <g fill="#b45309"><circle cx="42" cy="88" r="5"/><circle cx="55" cy="107" r="5"/><circle cx="66" cy="119" r="5"/><circle cx="76" cy="127" r="5"/></g>
+            <text x="100" y="238" text-anchor="middle" class="axlbl">too small: crawls</text>
+            <path d="M250,45 Q330,225 410,45" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+            <g fill="#15803d"><circle cx="276" cy="93" r="5"/><circle cx="304" cy="126" r="5"/><circle cx="324" cy="134" r="5"/><circle cx="330" cy="135" r="6"/></g>
+            <text x="330" y="238" text-anchor="middle" class="axlbl">just right: converges</text>
+            <path d="M480,45 Q560,225 640,45" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+            <polyline points="579,130 534,126 595,118 512,103" fill="none" stroke="#a32d2d" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <g fill="#a32d2d"><circle cx="579" cy="130" r="5"/><circle cx="534" cy="126" r="5"/><circle cx="595" cy="118" r="5"/><circle cx="512" cy="103" r="5"/></g>
+            <text x="560" y="238" text-anchor="middle" class="axlbl">too large: overshoots</text>
+          </svg>
+        </div>
+        <p class="stmt" style="margin-top:2px">Tiny steps inch down one side. Good steps walk to the bottom. Oversized steps leap across the valley and can climb instead of settle.</p>
+      </div>
+    </section>
+
+    <!-- 22. Loss vs steps curves -->
+    <section>
+      <h2><span class="eyebrow">Learning rate</span>Converge, crawl, or diverge</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 640 250" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:400px">
+            <g>
+              <line x1="40" y1="40" x2="40" y2="200" stroke="#6b7793"/><line x1="40" y1="200" x2="190" y2="200" stroke="#6b7793"/>
+              <path d="M50,60 C80,150 120,190 180,192" fill="none" stroke="#15803d" stroke-width="3"/>
+              <text x="115" y="228" text-anchor="middle" class="leg">just right: converges</text>
+            </g>
+            <g>
+              <line x1="245" y1="40" x2="245" y2="200" stroke="#6b7793"/><line x1="245" y1="200" x2="395" y2="200" stroke="#6b7793"/>
+              <path d="M255,70 C300,95 350,120 388,140" fill="none" stroke="#b45309" stroke-width="3"/>
+              <text x="320" y="228" text-anchor="middle" class="leg">too small: crawls</text>
+            </g>
+            <g>
+              <line x1="450" y1="40" x2="450" y2="200" stroke="#6b7793"/><line x1="450" y1="200" x2="600" y2="200" stroke="#6b7793"/>
+              <path d="M470,150 L500,120 L525,165 L552,80 L580,185 L600,50" fill="none" stroke="#a32d2d" stroke-width="3"/>
+              <text x="525" y="228" text-anchor="middle" class="leg">too large: diverges</text>
+            </g>
+          </svg>
+        </div>
+        <div class="callout" style="margin-top:2px"><span class="label">Bigger is not faster</span>The y-axis is loss, the x-axis is steps. Past a point a larger step overshoots and the loss climbs instead of falling. Faster steps are not faster learning if they miss.</div>
+      </div>
+    </section>
+
+    <!-- 23. Batch flavors -->
+    <section>
+      <h2><span class="eyebrow">How much data per step</span>Full, stochastic, and mini-batch</h2>
+      <div class="body">
+        <div class="split-row">
+          <div class="split-box"><div class="col-label">Full-batch</div><p>Gradient from all data each step. Accurate, but slow and memory-heavy.</p></div>
+          <div class="split-box"><div class="col-label">Stochastic</div><p>One example per step. Fast and noisy; the noise can even help.</p></div>
+          <div class="split-box"><div class="col-label">Mini-batch</div><p>A small group per step. The practical middle, and what class 2.5 (Training in practice) uses.</p></div>
+        </div>
+        <div class="callout"><span class="label">Step versus epoch</span>One step is one update from one batch. One epoch is a full pass through all the data, usually many steps. You train for several epochs.</div>
+      </div>
+    </section>
+
+    <!-- 24. Smooth vs noisy path -->
+    <section>
+      <h2><span class="eyebrow">How much data per step</span>Smooth path, or noisy path</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 520 250" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:400px">
+            <ellipse cx="120" cy="125" rx="85" ry="62" fill="none" stroke="#c3d0ee"/>
+            <ellipse cx="120" cy="125" rx="55" ry="40" fill="none" stroke="#c3d0ee"/>
+            <ellipse cx="120" cy="125" rx="26" ry="19" fill="none" stroke="#c3d0ee"/>
+            <path d="M45,70 C90,100 100,150 120,125" fill="none" stroke="#15803d" stroke-width="2.5" marker-end="url(#ct)"/>
+            <circle cx="120" cy="125" r="4" fill="#15803d"/>
+            <text x="120" y="225" text-anchor="middle" class="axlbl">full-batch: smooth</text>
+            <ellipse cx="390" cy="125" rx="85" ry="62" fill="none" stroke="#c3d0ee"/>
+            <ellipse cx="390" cy="125" rx="55" ry="40" fill="none" stroke="#c3d0ee"/>
+            <ellipse cx="390" cy="125" rx="26" ry="19" fill="none" stroke="#c3d0ee"/>
+            <polyline points="315,72 350,105 330,120 372,110 355,140 390,125" fill="none" stroke="#b45309" stroke-width="2.5" marker-end="url(#ct)"/>
+            <circle cx="390" cy="125" r="4" fill="#b45309"/>
+            <text x="390" y="225" text-anchor="middle" class="axlbl">stochastic: noisy</text>
+            <defs><marker id="ct" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#6b7793"/></marker></defs>
+          </svg>
+        </div>
+        <p class="stmt" style="margin-top:2px">The rings are equal-loss contours; the center is the minimum. Full-batch glides in. Stochastic wanders, and that wander can jump it out of shallow dips.</p>
+      </div>
+    </section>
+
+    <!-- 25. Local vs global -->
+    <section>
+      <h2><span class="eyebrow">A caveat</span>One valley, or many?</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">Real loss landscapes can have several valleys. Descent finds <strong>a</strong> low point, not always the lowest.</p>
+            <div class="callout" style="margin-top:12px"><span class="label">In practice</span>For large models this is rarely fatal: most valleys are about as good as each other, and the noise in mini-batch descent helps escape shallow ones. Good enough beats perfect.</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 480 290" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+              <path d="M30,80 C90,80 110,175 165,175 C215,175 225,110 285,120 C345,130 350,225 405,225 C445,225 470,150 475,120" fill="none" stroke="#2563eb" stroke-width="3"/>
+              <circle cx="165" cy="175" r="8" fill="#b45309"/>
+              <line x1="150" y1="205" x2="163" y2="182" stroke="#6b7793" stroke-width="1"/>
+              <text x="150" y="222" text-anchor="middle" class="leg" fill="#b45309">local min (stuck)</text>
+              <circle cx="405" cy="225" r="8" fill="#15803d"/>
+              <line x1="405" y1="243" x2="405" y2="235" stroke="#6b7793" stroke-width="1"/>
+              <text x="405" y="262" text-anchor="middle" class="leg" fill="#15803d">global min (best)</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 26. Training loop -->
+    <section>
+      <h2><span class="eyebrow">The loop</span>Put it together</h2>
+      <div class="body">
+        <div class="figure-wrap">
+          <svg viewBox="0 0 640 574" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:452px" font-family="Segoe UI, Arial, sans-serif">
+            <defs><marker id="lp" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+            <rect x="120" y="40" width="210" height="52" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/>
+            <text x="225" y="72" text-anchor="middle" font-size="18" fill="#172033">Predict</text>
+            <rect x="120" y="132" width="210" height="52" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/>
+            <text x="225" y="164" text-anchor="middle" font-size="18" fill="#172033">Measure loss</text>
+            <rect x="120" y="224" width="210" height="52" rx="8" fill="#f7c9a3" stroke="#c2621f" stroke-width="1.5"/>
+            <text x="225" y="256" text-anchor="middle" font-size="18" fill="#172033">Compute gradient</text>
+            <rect x="120" y="316" width="210" height="52" rx="8" fill="#bfeef4" stroke="#2596a8" stroke-width="1.5"/>
+            <text x="225" y="348" text-anchor="middle" font-size="18" fill="#172033">Update weights</text>
+            <ellipse cx="225" cy="440" rx="122" ry="40" fill="#e6e9f4" stroke="#6b7793" stroke-width="1.5"/>
+            <text x="225" y="445" text-anchor="middle" font-size="16" fill="#172033">loss still improving?</text>
+            <ellipse cx="225" cy="536" rx="56" ry="28" fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"/>
+            <text x="225" y="541" text-anchor="middle" font-size="17" fill="#172033">Stop</text>
+            <line x1="225" y1="92" x2="225" y2="128" stroke="#2563eb" stroke-width="2" marker-end="url(#lp)"/>
+            <line x1="225" y1="184" x2="225" y2="220" stroke="#2563eb" stroke-width="2" marker-end="url(#lp)"/>
+            <line x1="225" y1="276" x2="225" y2="312" stroke="#2563eb" stroke-width="2" marker-end="url(#lp)"/>
+            <line x1="225" y1="368" x2="225" y2="398" stroke="#2563eb" stroke-width="2" marker-end="url(#lp)"/>
+            <line x1="225" y1="480" x2="225" y2="506" stroke="#2563eb" stroke-width="2" marker-end="url(#lp)"/>
+            <text x="238" y="498" font-size="13" fill="#3f4a63">no: converged</text>
+            <path d="M103,440 L40,440 L40,66 L114,66" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#lp)"/>
+            <text x="52" y="250" font-size="13" fill="#3f4a63" transform="rotate(-90 52 250)">yes: repeat</text>
+            <text x="360" y="72" font-size="18" fill="#172033">pred = f(x, &#952;)</text>
+            <text x="360" y="164" font-size="18" fill="#172033">L = loss(pred, y)</text>
+            <text x="360" y="256" font-size="18" fill="#172033">g = &#8711;L</text>
+            <text x="360" y="348" font-size="18" fill="#172033">&#952; &#8592; &#952; - &#951;&#183;g</text>
+          </svg>
+        </div>
+        <p class="stmt" style="margin-top:6px">Repeat the cycle until the loss stops improving, then stop. In class 2.4 (PyTorch fundamentals) you code this exact loop.</p>
+      </div>
+    </section>
+
+    <!-- 27. Build -->
+    <section>
+      <h2><span class="eyebrow">Build</span>Watch descent happen</h2>
+      <div class="body">
+        <p class="lead">In the notebook you run gradient descent on a simple curve and plot the point walking to the minimum. You change the learning rate and see it converge, crawl, or blow up, fit a tiny line to data with the same loop, and compare cross-entropy against MSE on a confident-wrong prediction.</p>
+        <div class="callout"><span class="label">The habit to build</span>Pick the loss that fits the task, then let the same descent loop do the work.</div>
+      </div>
+    </section>
+
+    <!-- 28. Wrap -->
+    <section>
+      <h2><span class="eyebrow">Wrap up</span>Your turn, and what is next</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Micro-assignment</div>
+            <ul>
+              <li>Six problems, only this class and earlier, plain Python.</li>
+              <li>Compute a loss and a descent step by hand, run a short descent, diagnose a bad learning rate, and score cross-entropy on a confident-wrong guess.</li>
+              <li>Details in the micro-assignment folder.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Next: class 2.3, Neural networks</div>
+            <ul>
+              <li>One neuron: a weighted sum and a gate.</li>
+              <li>Stack them into layers.</li>
+              <li>Softmax and cross-entropy, now that cross-entropy is familiar.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+      primaryColor: '#ffffff', primaryTextColor: '#172033', primaryBorderColor: '#2563eb',
+      lineColor: '#2563eb', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', fontSize: '16px' },
+    flowchart: { nodeSpacing: 45, rankSpacing: 50, htmlLabels: true } });
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', width: 1280, height: 720,
+    margin: 0, center: false, transition: 'slide', plugins: [ RevealHighlight, RevealNotes ]
+  }).then(function () {
+    if (window.mermaid) { mermaid.run(); }
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        { left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false } ], throwOnError: false });
+    }
+  });
+</script>
+</body>
+</html>

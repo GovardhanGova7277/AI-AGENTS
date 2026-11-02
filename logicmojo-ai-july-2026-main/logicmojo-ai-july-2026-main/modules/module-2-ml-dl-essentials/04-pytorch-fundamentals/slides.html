@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class 2.4 - PyTorch fundamentals</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="../../../assets/theme.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="deck-footer">GenAI and Agentic AI &middot; Module 2 &middot; Class 2.4</div>
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section class="title" data-background-gradient="linear-gradient(120deg, #1e3a8a 0%, #3730a3 55%, #312e81 100%)">
+      <span class="kicker">Module 2 &middot; ML and DL essentials &middot; Class 2.4</span>
+      <h1>PyTorch fundamentals</h1>
+      <p class="lead">Move from by-hand NumPy to the tool used for the rest of the course, and code the training loop from class 2.2 (How models learn) for real.</p>
+    </section>
+
+    <!-- 2. Today's road -->
+    <section>
+      <h2><span class="eyebrow">Today</span>The road for this class</h2>
+      <div class="body">
+        <div class="path-layout">
+          <div class="journey">
+            <div class="step"><div class="step-num">1</div><div><div class="step-title">Tensors<span class="step-note">A NumPy array with two superpowers.</span></div></div></div>
+            <div class="step"><div class="step-num">2</div><div><div class="step-title">Autograd<span class="step-note">The graph that computes every gradient for you.</span></div></div></div>
+            <div class="step"><div class="step-num">3</div><div><div class="step-title">Losses and optimizers<span class="step-note">Pick the loss; the optimizer takes the step.</span></div></div></div>
+            <div class="step"><div class="step-num">4</div><div><div class="step-title">nn.Module and the five-line loop<span class="step-note">The class 2.2 (How models learn) cycle, in code.</span></div></div></div>
+            <div class="step"><div class="step-num">5</div><div><div class="step-title">The traps<span class="step-note">Double softmax and the missing zero_grad.</span></div></div></div>
+          </div>
+          <div class="practice">
+            <div class="col-label">Why this matters</div>
+            <div class="pill"><span class="pill-tag">Same loop, automated</span>You built a neuron in NumPy and found gradients by hand. PyTorch keeps the ideas and removes the drudgery.</div>
+            <div class="pill"><span class="pill-tag">Used everywhere ahead</span>Tensors, autograd, and this loop underpin every model from here, up to fine-tuning in Module 4 (LLMs and GenAI).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Tensor -->
+    <section>
+      <h2><span class="eyebrow">Tensors</span>A NumPy array with two superpowers</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import torch
+
+t = torch.tensor([[1., 2., 3.],
+                  [4., 5., 6.]])
+print(t.shape)     # torch.Size([2, 3])
+print(t.dtype)     # torch.float32
+print(t + 10)      # elementwise, like NumPy</code></pre>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+              <rect x="30" y="70" width="120" height="60" rx="8" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/>
+              <text x="90" y="96" text-anchor="middle" font-size="15" font-weight="600" fill="#172033">NumPy</text><text x="90" y="116" text-anchor="middle" font-size="13" fill="#3f4a63">array</text>
+              <line x1="150" y1="100" x2="196" y2="100" stroke="#6b7793" stroke-width="1.5" marker-end="url(#ar4)"/>
+              <rect x="200" y="58" width="130" height="84" rx="8" fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"/>
+              <text x="265" y="86" text-anchor="middle" font-size="15" font-weight="600" fill="#172033">tensor</text>
+              <text x="265" y="107" text-anchor="middle" font-size="13" fill="#3f4a63">+ runs on GPU</text>
+              <text x="265" y="126" text-anchor="middle" font-size="13" fill="#3f4a63">+ tracks gradients</text>
+              <defs><marker id="ar4" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7793"/></marker></defs>
+            </svg>
+          </div>
+        </div>
+        <div class="callout"><span class="label">The one idea</span>Everything in PyTorch flows as tensors. The array skills from class 1.4 (The data stack) carry straight over.</div>
+      </div>
+    </section>
+
+    <!-- 4. Tensors + broadcasting -->
+    <section>
+      <h2><span class="eyebrow">Tensors</span>The NumPy fundamentals still hold</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">x = torch.tensor([1., 2., 3.])
+print(x.mean())            # tensor(2.)
+print(x * 2)               # [2., 4., 6.]
+
+bias = torch.tensor([10., 20., 30.])
+batch = torch.ones(2, 3)
+print(batch + bias)        # broadcast across rows</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Shape, indexing, slicing, and broadcasting work as in class 1.4 (The data stack).</li>
+              <li>Move data with <code>.to(device)</code> to run on a GPU.</li>
+              <li>Convert when you need to: <code>t.numpy()</code> and <code>torch.from_numpy(a)</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Autograd -->
+    <section>
+      <h2><span class="eyebrow">Autograd</span>Gradients for free</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">x = torch.tensor([1., 2., 3.], requires_grad=True)
+y = (x ** 2).sum()      # y = 1 + 4 + 9 = 14
+
+y.backward()            # record then differentiate
+print(x.grad)           # tensor([2., 4., 6.])  =  2*x</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>PyTorch records every operation on a tracked tensor.</li>
+              <li>Calling <code>.backward()</code> on the loss computes the gradient with respect to every parameter.</li>
+              <li>In class 2.3 (Neural networks) you did this by hand; here one call does it.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Computational graph (animated) -->
+    <section>
+      <h2><span class="eyebrow">Autograd</span>It records a graph, then differentiates it</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">Forward (blue) builds \( y \) from \( x \). Then <code>.backward()</code> walks the same graph in reverse (orange), applying the chain rule to fill <code>x.grad</code>, the same backprop you did by hand in class 2.3 (Neural networks), automated.</p>
+        <div class="cols cols-2" style="align-items:center">
+          <div class="figure-wrap">
+            <svg viewBox="0 0 620 250" xmlns="http://www.w3.org/2000/svg" style="width:100%" font-family="Segoe UI, Arial, sans-serif">
+              <g stroke="#cbd3e6" stroke-width="2">
+                <line x1="106" y1="95" x2="196" y2="95"/><line x1="312" y1="95" x2="402" y2="95"/><line x1="518" y1="95" x2="566" y2="95"/>
+              </g>
+              <g stroke="#2563eb" stroke-width="3" fill="none" stroke-dasharray="9 12">
+                <line x1="106" y1="95" x2="196" y2="95"><animate attributeName="stroke-dashoffset" from="21" to="0" dur="0.7s" repeatCount="indefinite"/></line>
+                <line x1="312" y1="95" x2="402" y2="95"><animate attributeName="stroke-dashoffset" from="21" to="0" dur="0.7s" begin="0.25s" repeatCount="indefinite"/></line>
+                <line x1="518" y1="95" x2="566" y2="95"><animate attributeName="stroke-dashoffset" from="21" to="0" dur="0.7s" begin="0.5s" repeatCount="indefinite"/></line>
+              </g>
+              <g stroke="#b45309" stroke-width="3" fill="none" stroke-dasharray="9 12">
+                <line x1="402" y1="150" x2="312" y2="150"><animate attributeName="stroke-dashoffset" from="21" to="0" dur="0.7s" repeatCount="indefinite"/></line>
+                <line x1="196" y1="150" x2="106" y2="150"><animate attributeName="stroke-dashoffset" from="21" to="0" dur="0.7s" begin="0.25s" repeatCount="indefinite"/></line>
+              </g>
+              <g>
+                <circle cx="70" cy="95" r="28" fill="#eef4ff" stroke="#93a7d8" stroke-width="1.5"/><text x="70" y="101" text-anchor="middle" font-size="16" font-weight="600" fill="#172033">x</text>
+                <rect x="196" y="69" width="116" height="52" rx="8" fill="#fde9b8" stroke="#d99a00" stroke-width="1.5"/><text x="254" y="101" text-anchor="middle" font-size="15" font-weight="600" fill="#172033">square</text>
+                <rect x="402" y="69" width="116" height="52" rx="8" fill="#f7c9a3" stroke="#c2621f" stroke-width="1.5"/><text x="460" y="101" text-anchor="middle" font-size="15" font-weight="600" fill="#172033">sum</text>
+                <circle cx="594" cy="95" r="26" fill="#c7e9b0" stroke="#4f9a2f" stroke-width="1.5"/><text x="594" y="101" text-anchor="middle" font-size="16" font-weight="600" fill="#172033">y</text>
+              </g>
+              <text x="70" y="52" text-anchor="middle" font-size="13" fill="#3f4a63">[1, 2, 3]</text>
+              <text x="254" y="150" text-anchor="middle" font-size="12.5" fill="#3f4a63">[1, 4, 9]</text>
+              <text x="594" y="52" text-anchor="middle" font-size="13" fill="#3f4a63">14</text>
+              <text x="70" y="185" text-anchor="middle" font-size="12.5" fill="#b45309">x.grad</text>
+              <text x="70" y="203" text-anchor="middle" font-size="12.5" fill="#b45309">[2, 4, 6]</text>
+              <text x="254" y="228" text-anchor="middle" font-size="11.5" fill="#6b7793">forward (blue), backward (orange)</text>
+            </svg>
+          </div>
+          <div class="card">
+            <div class="col-label">Why x.grad is [2, 4, 6]</div>
+            <ul class="tight">
+              <li>Forward, square each input: \( [1,2,3] \rightarrow [1,4,9] \).</li>
+              <li>Sum them: \( 1+4+9 = 14 = y \).</li>
+              <li>So \( y = x_1^2 + x_2^2 + x_3^2 \).</li>
+              <li>Differentiate: \( \dfrac{\partial y}{\partial x_i} = 2x_i \).</li>
+              <li>At \( x=[1,2,3] \): \( 2x = [2,4,6] \), exactly <code>x.grad</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. .grad is the class 2.2 gradient -->
+    <section>
+      <h2><span class="eyebrow">Autograd</span>That .grad is the gradient from class 2.2 (How models learn)</h2>
+      <div class="body">
+        <p class="stmt">The number in <code>x.grad</code> is exactly the \( \nabla_\theta L \) from the class 2.2 (How models learn) update rule.</p>
+        <div class="callout"><span class="label">It computes gradients; you write the loop</span>PyTorch does not learn on its own. It hands you the gradient; you still apply the step, which is what the optimizer does next.</div>
+      </div>
+    </section>
+
+    <!-- 8. Losses -->
+    <section>
+      <h2><span class="eyebrow">Losses</span>Pick the loss to match the task</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import torch.nn as nn
+
+mse = nn.MSELoss()              # regression (a number)
+ce  = nn.CrossEntropyLoss()     # classification (a class)</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>MSELoss</code> for regression, the mean squared error from class 2.2 (How models learn).</li>
+              <li><code>CrossEntropyLoss</code> for classification, the cross-entropy from class 2.3 (Neural networks).</li>
+              <li>This is the output-layer table from class 2.3 (Neural networks), in code.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout"><span class="label">Key detail</span><code>CrossEntropyLoss</code> takes raw <strong>logits</strong> and the integer class index, and applies softmax internally.</div>
+      </div>
+    </section>
+
+    <!-- 9. Logits vs probabilities -->
+    <section>
+      <h2><span class="eyebrow">Losses</span>The double-softmax trap</h2>
+      <div class="body">
+        <p class="stmt" style="margin:0">The model's last layer outputs <strong>logits</strong>, raw scores. <code>CrossEntropyLoss</code> applies softmax internally, so if you softmax first it happens twice and the signal washes out. Same logits \( (2, 1, 0) \), both ways:</p>
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label" style="color:var(--c-warn)">Wrong: softmax twice</div>
+            <ul class="tight">
+              <li>Your softmax: \( (2,1,0) \rightarrow (0.66,\ 0.24,\ 0.09) \).</li>
+              <li>Loss softmaxes again: \( \rightarrow (0.45,\ 0.30,\ 0.25) \).</li>
+              <li>The peak flattens, so the gradient weakens and training stalls.</li>
+            </ul>
+            <div class="figure-wrap" style="margin-top:6px">
+              <svg viewBox="0 0 240 90" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:96px">
+                <line x1="10" y1="78" x2="230" y2="78" stroke="#6b7793"/>
+                <rect x="40" y="42" width="36" height="36" fill="#c2621f"/><rect x="100" y="54" width="36" height="24" fill="#c2621f"/><rect x="160" y="58" width="36" height="20" fill="#c2621f"/>
+                <text x="120" y="20" text-anchor="middle" font-size="12" fill="#a32d2d">flat: weak signal</text>
+              </svg>
+            </div>
+          </div>
+          <div class="card">
+            <div class="col-label" style="color:var(--c-good)">Right: softmax once</div>
+            <ul class="tight">
+              <li>Pass raw logits \( (2,1,0) \) straight to the loss.</li>
+              <li>It softmaxes once: \( \rightarrow (0.66,\ 0.24,\ 0.09) \).</li>
+              <li>A sharp target, so the gradient is strong and training moves.</li>
+            </ul>
+            <div class="figure-wrap" style="margin-top:6px">
+              <svg viewBox="0 0 240 90" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:96px">
+                <line x1="10" y1="78" x2="230" y2="78" stroke="#6b7793"/>
+                <rect x="40" y="18" width="36" height="60" fill="#2563eb"/><rect x="100" y="56" width="36" height="22" fill="#2563eb"/><rect x="160" y="70" width="36" height="8" fill="#2563eb"/>
+                <text x="120" y="14" text-anchor="middle" font-size="12" fill="#15803d">peaked: strong signal</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="callout"><span class="label">The fix</span>Pass raw logits straight to <code>CrossEntropyLoss</code> and let it do the softmax once. Only apply softmax yourself at inference, when you actually want probabilities to read.</div>
+      </div>
+    </section>
+
+    <!-- 10. Optimizers -->
+    <section>
+      <h2><span class="eyebrow">Optimizers</span>The object that takes the step</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">opt = torch.optim.SGD(model.parameters(), lr=0.1)
+# or, the common default:
+opt = torch.optim.Adam(model.parameters(), lr=0.01)</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>The optimizer applies the update rule to every parameter.</li>
+              <li><code>SGD</code> is the plain step from class 2.2 (How models learn).</li>
+              <li><code>Adam</code> adapts the step size per parameter and is the usual default.</li>
+              <li>You hand it the model's parameters and a learning rate.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. nn.Module -->
+    <section>
+      <h2><span class="eyebrow">nn.Module</span>A container for layers and parameters</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import torch.nn as nn
+
+class Net(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(64, 32)
+        self.fc2 = nn.Linear(32, 10)
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        return self.fc2(x)          # raw logits</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>nn.Module</code> holds your layers and their parameters.</li>
+              <li><code>forward</code> is the forward pass from class 2.3 (Neural networks).</li>
+              <li>Return raw logits; the loss handles softmax.</li>
+              <li><code>nn.Linear(64, 32)</code> is a full layer: its weights and biases are created for you.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. Five-line loop -->
+    <section>
+      <h2><span class="eyebrow">The loop</span>Five moves, straight from class 2.2 (How models learn)</h2>
+      <div class="body">
+        <div class="code-lg">
+          <pre><code data-trim class="language-python">pred = model(x)               # 1. predict (forward)
+loss = loss_fn(pred, y)       # 2. measure wrongness
+opt.zero_grad()               # 3. clear old gradients
+loss.backward()               # 4. compute gradients (autograd)
+opt.step()                    # 5. take the downhill step</code></pre>
+        </div>
+        <div class="figure-wrap" style="margin-top:8px">
+          <svg viewBox="0 0 680 150" xmlns="http://www.w3.org/2000/svg" style="width:auto; max-width:100%; max-height:210px" font-family="Segoe UI, Arial, sans-serif">
+            <defs><marker id="a5" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+            <rect x="12" y="45" width="118" height="50" rx="8" fill="#eef4ff" stroke="#93a7d8"/><text x="71" y="67" text-anchor="middle" font-size="13" fill="#172033">predict</text><text x="71" y="85" text-anchor="middle" font-size="11" fill="#6b7793">model(x)</text>
+            <rect x="150" y="45" width="118" height="50" rx="8" fill="#fde9b8" stroke="#d99a00"/><text x="209" y="67" text-anchor="middle" font-size="13" fill="#172033">measure</text><text x="209" y="85" text-anchor="middle" font-size="11" fill="#6b7793">loss_fn</text>
+            <rect x="288" y="45" width="118" height="50" rx="8" fill="#f1f4fc" stroke="#93a7d8"/><text x="347" y="67" text-anchor="middle" font-size="13" fill="#172033">clear</text><text x="347" y="85" text-anchor="middle" font-size="11" fill="#6b7793">zero_grad</text>
+            <rect x="426" y="45" width="118" height="50" rx="8" fill="#f7c9a3" stroke="#c2621f"/><text x="485" y="67" text-anchor="middle" font-size="13" fill="#172033">differentiate</text><text x="485" y="85" text-anchor="middle" font-size="11" fill="#6b7793">backward</text>
+            <rect x="564" y="45" width="104" height="50" rx="8" fill="#c7e9b0" stroke="#4f9a2f"/><text x="616" y="67" text-anchor="middle" font-size="13" fill="#172033">step</text><text x="616" y="85" text-anchor="middle" font-size="11" fill="#6b7793">opt.step</text>
+            <g stroke="#2563eb" stroke-width="2" fill="none">
+              <line x1="130" y1="70" x2="148" y2="70" marker-end="url(#a5)"/><line x1="268" y1="70" x2="286" y2="70" marker-end="url(#a5)"/>
+              <line x1="406" y1="70" x2="424" y2="70" marker-end="url(#a5)"/><line x1="544" y1="70" x2="562" y2="70" marker-end="url(#a5)"/>
+            </g>
+            <path d="M616,95 L616,125 L71,125 L71,97" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a5)"/>
+            <text x="343" y="142" text-anchor="middle" font-size="12" fill="#6b7793">repeat every step</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. train vs eval -->
+    <section>
+      <h2><span class="eyebrow">Modes</span>train() and eval()</h2>
+      <div class="body">
+        <p class="stmt">Some layers behave differently while training versus scoring. A mode switch tells the model which.</p>
+        <ul>
+          <li><code>model.train()</code> before the training loop.</li>
+          <li><code>model.eval()</code> before scoring, together with <code>torch.no_grad()</code>.</li>
+          <li>Matters for dropout and batch norm, which we meet in class 2.5 (Training in practice).</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 14. zero_grad trap -->
+    <section>
+      <h2><span class="eyebrow">The classic bug</span>Forgetting zero_grad</h2>
+      <div class="body">
+        <div class="cols cols-2" style="align-items:center">
+          <div>
+            <p class="stmt">PyTorch <strong>accumulates</strong> gradients by default: each <code>.backward()</code> adds to <code>.grad</code> instead of replacing it.</p>
+            <div class="callout" style="margin-top:12px"><span class="label">The fix</span>Call <code>optimizer.zero_grad()</code> every step, before <code>.backward()</code>. Skip it and last step's gradient contaminates this one, and training quietly breaks.</div>
+          </div>
+          <div class="figure-wrap">
+            <svg viewBox="0 0 340 210" xmlns="http://www.w3.org/2000/svg" style="max-width:100%" font-family="Segoe UI, Arial, sans-serif">
+              <text x="90" y="24" text-anchor="middle" font-size="13" fill="#a32d2d" font-weight="600">no reset: piles up</text>
+              <line x1="35" y1="175" x2="150" y2="175" stroke="#6b7793"/>
+              <rect x="52" y="152" width="22" height="23" fill="#a32d2d"/><rect x="86" y="128" width="22" height="47" fill="#a32d2d"/><rect x="120" y="98" width="22" height="77" fill="#a32d2d"/>
+              <text x="250" y="24" text-anchor="middle" font-size="13" fill="#15803d" font-weight="600">zero_grad: steady</text>
+              <line x1="195" y1="175" x2="310" y2="175" stroke="#6b7793"/>
+              <rect x="212" y="152" width="22" height="23" fill="#15803d"/><rect x="246" y="152" width="22" height="23" fill="#15803d"/><rect x="280" y="152" width="22" height="23" fill="#15803d"/>
+              <text x="92" y="196" text-anchor="middle" font-size="11" fill="#6b7793">step 1  2  3</text>
+              <text x="252" y="196" text-anchor="middle" font-size="11" fill="#6b7793">step 1  2  3</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15. Build -->
+    <section>
+      <h2><span class="eyebrow">Build</span>Train a real classifier</h2>
+      <div class="body">
+        <p class="lead">In the notebook you load the digits dataset (8 by 8 handwritten numbers, bundled with scikit-learn), define an <code>nn.Module</code>, pick <code>CrossEntropyLoss</code> and an optimizer, run the five-line loop until the loss falls, and read the final accuracy.</p>
+        <div class="callout"><span class="label">The habit to build</span>Say the five lines out loud, mapping each to the class 2.2 (How models learn) cycle: predict, measure, clear, differentiate, step.</div>
+      </div>
+    </section>
+
+    <!-- 16. Wrap -->
+    <section>
+      <h2><span class="eyebrow">Wrap up</span>Your turn, and what is next</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Micro-assignment</div>
+            <ul>
+              <li>Six problems in PyTorch.</li>
+              <li>Tensors, autograd, the five-line loop, and the zero_grad trap.</li>
+              <li>Details in the micro-assignment folder.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Next: class 2.5, Training in practice</div>
+            <ul>
+              <li>Batches, epochs, and an evaluation pass.</li>
+              <li>Learning curves and overfitting control.</li>
+              <li>GPU, reproducibility, and saving the model.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+      primaryColor: '#ffffff', primaryTextColor: '#172033', primaryBorderColor: '#2563eb',
+      lineColor: '#2563eb', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', fontSize: '16px' },
+    flowchart: { nodeSpacing: 45, rankSpacing: 50, htmlLabels: true } });
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', width: 1280, height: 720,
+    margin: 0, center: false, transition: 'slide', plugins: [ RevealHighlight, RevealNotes ]
+  }).then(function () {
+    if (window.mermaid) { mermaid.run(); }
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        { left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false } ], throwOnError: false });
+    }
+  });
+</script>
+</body>
+</html>

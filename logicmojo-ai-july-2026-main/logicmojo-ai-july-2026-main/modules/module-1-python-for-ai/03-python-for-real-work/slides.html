@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class 1.3 - Python for real work</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="../../../assets/theme.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="deck-footer">GenAI and Agentic AI &middot; Module 1 &middot; Class 1.3</div>
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section class="title" data-background-gradient="linear-gradient(120deg, #1e3a8a 0%, #3730a3 55%, #312e81 100%)">
+      <span class="kicker">Module 1 &middot; Python for AI &middot; Class 1.3</span>
+      <h1>Python for real work</h1>
+      <p class="lead">Object-oriented Python, and handling the real world: classes and inheritance, errors, and files and JSON.</p>
+    </section>
+
+    <!-- 2. Recap and today -->
+    <section>
+      <h2><span class="eyebrow">Recap and today</span>Structure bigger programs</h2>
+      <div class="body">
+        <p class="stmt">In 1.2 you wrote functions and used the core data structures. Today you model things with classes and deal with the messy real world.</p>
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">You already can</div>
+            <ul class="tight">
+              <li>Write functions with type hints</li>
+              <li>Use tuples, dicts, and sets</li>
+              <li>Build collections with comprehensions</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Today you add</div>
+            <ul class="tight">
+              <li><strong>Classes and objects</strong>: attributes, methods, <code>self</code></li>
+              <li><strong>Method types</strong>: instance, class, static</li>
+              <li><strong>Inheritance and polymorphism</strong></li>
+              <li><strong>Errors</strong>, and files: <strong>text and JSON</strong></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Define a class -->
+    <section>
+      <h2><span class="eyebrow">OOP &middot; 1 of 6</span>A class is a blueprint; an object is built from it</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">class Account:
+    def __init__(self, balance):    # runs at creation
+        self.balance = balance      # attribute
+
+    def deposit(self, amount):      # instance method
+        self.balance += amount
+
+a = Account(100)
+a.deposit(50)
+print(a.balance)   # 150</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>The <strong>class</strong> is the design; an <strong>object</strong> is one thing made from it.</li>
+              <li><code>__init__</code> sets up the starting <strong>attributes</strong>.</li>
+              <li><strong>Methods</strong> are its actions.</li>
+              <li><code>self</code> is this object, passed in automatically.</li>
+            </ul>
+            <div class="analogy"><span class="label">Think of it as</span>A cookie cutter (class) and the cookies (objects).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Objects + type -->
+    <section>
+      <h2><span class="eyebrow">OOP &middot; 2 of 6</span>Each object holds its own state</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">a = Account(100)
+b = Account(0)
+a.deposit(50)
+
+print(a.balance, b.balance)   # 150 0
+print(type(a))   # &lt;class '__main__.Account'&gt;</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>Two objects from one class are <strong>independent</strong>: changing <code>a</code> does not touch <code>b</code>.</li>
+              <li><code>a</code> is an <strong>object</strong> (instance) of <code>Account</code>.</li>
+              <li><code>type(a)</code> shows which class it is.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Method types -->
+    <section>
+      <h2><span class="eyebrow">OOP &middot; 3 of 6</span>Instance, class, and static methods</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">class Temperature:
+    def __init__(self, celsius):
+        self.celsius = celsius
+
+    def describe(self):                # instance method
+        return f"{self.celsius}C"
+
+    @classmethod
+    def from_fahrenheit(cls, f):       # class method: alternate constructor
+        return cls((f - 32) * 5 / 9)
+
+    @staticmethod
+    def is_freezing(celsius):          # static method: plain helper
+        return celsius &lt;= 0
+
+t = Temperature.from_fahrenheit(212)
+print(t.describe())            # 100.0C
+print(Temperature.is_freezing(-4))   # True</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><strong>Instance method</strong> takes <code>self</code>: it works on one object.</li>
+              <li><strong>Class method</strong> takes <code>cls</code>: here an <em>alternate constructor</em>. <code>from_fahrenheit(212)</code> builds a Temperature from a Fahrenheit reading.</li>
+              <li><strong>Static method</strong> takes neither: a plain helper that belongs with the class, like <code>is_freezing(-4)</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Inheritance -->
+    <section>
+      <h2><span class="eyebrow">OOP &middot; 4 of 6</span>Inheritance: reuse and extend</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">class Account:
+    def __init__(self, balance):
+        self.balance = balance
+    def summary(self):
+        return f"balance {self.balance}"
+
+class SavingsAccount(Account):
+    def __init__(self, balance, rate):
+        super().__init__(balance)   # reuse the parent
+        self.rate = rate
+    def summary(self):              # override
+        return f"balance {self.balance}, rate {self.rate}"</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>A <strong>subclass</strong> reuses a parent and adds to it.</li>
+              <li><code>super()</code> calls the parent's version, so you do not repeat it.</li>
+              <li><strong>Override</strong> a method to change the behavior.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Polymorphism -->
+    <section>
+      <h2><span class="eyebrow">OOP &middot; 5 of 6</span>Polymorphism: same call, different behavior</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">for acc in [Account(100), SavingsAccount(100, 0.05)]:
+    print(acc.summary())
+
+# balance 100
+# balance 100, rate 0.05</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>The same method name, <code>summary()</code>, runs different code depending on the object.</li>
+              <li>The caller does not need to know the exact type; it just calls the method.</li>
+              <li>This is <strong>duck typing</strong>: if it has the method, it works.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Multiple inheritance + MRO -->
+    <section>
+      <h2><span class="eyebrow">OOP &middot; 6 of 6</span>Multiple inheritance and the MRO</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">class Walk:
+    def move(self): return "walking"
+class Swim:
+    def move(self): return "swimming"
+
+class Amphibian(Walk, Swim):
+    pass
+
+a = Amphibian()
+print(a.move())   # walking  (Walk comes first)
+print([c.__name__ for c in Amphibian.__mro__])
+# ['Amphibian', 'Walk', 'Swim', 'object']</code></pre>
+          </div>
+          <div>
+            <div class="callout">
+              <span class="label">Use sparingly</span>
+              A class can inherit from more than one parent. When both define the same method, Python follows the <strong>method resolution order</strong> (MRO), left to right. It gets subtle fast, so prefer single inheritance or small, focused mixins.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Errors: multiple exceptions -->
+    <section>
+      <h2><span class="eyebrow">Errors &middot; 1 of 2</span>Catch each failure by name</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">def ratio(text):
+    try:
+        a, b = text.split("/")
+        return int(a) / int(b)
+    except ValueError:          # split gave the wrong count, or int() failed
+        return "need two integers like 3/4"
+    except ZeroDivisionError:   # b was 0
+        return "cannot divide by zero"
+
+# group errors that share a response
+try:
+    risky()
+except (KeyError, IndexError):
+    print("something was missing")</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>try</code> runs the risky code; each <code>except</code> handles one kind of failure.</li>
+              <li>Python runs the <strong>first</strong> matching block, so list the specific errors before the general ones.</li>
+              <li>Group errors that deserve the same response with a tuple: <code>except (A, B):</code>.</li>
+            </ul>
+            <div class="callout">
+              <span class="label">Name what you expect</span>
+              A bare <code>except:</code> swallows every error, including typos and bugs. Catch the exceptions you expect and let the rest surface.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Errors: else and finally -->
+    <section>
+      <h2><span class="eyebrow">Errors &middot; 2 of 2</span>else and finally: the full shape</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">def read_int(text):
+    try:
+        n = int(text)          # the risky step only
+    except ValueError:
+        print("not a number")
+        return None
+    else:
+        print("parsed cleanly")   # runs only if try raised nothing
+        return n
+    finally:
+        print("attempt finished")  # always runs, error or not</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>else</code> runs only when the <code>try</code> block raised nothing. Keep just the risky line in <code>try</code> and the follow-up work in <code>else</code>, so you never catch an error you did not mean to.</li>
+              <li><code>finally</code> runs no matter what: success, handled error, even an error on the way out. It is where cleanup goes, like closing a file or a connection.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Text files -->
+    <section>
+      <h2><span class="eyebrow">Files &middot; 1 of 2</span>Text files: just strings on disk</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">with open("notes.txt", "w") as f:  # "w" overwrites
+    f.write("first line\n")
+    f.write("second line\n")
+
+with open("notes.txt") as f:       # default mode is read
+    whole = f.read()               # entire file as one string
+
+with open("notes.txt") as f:
+    for line in f:                 # one line at a time
+        print(line.strip())        # drop the trailing newline</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><code>with open(...)</code> opens the file and closes it for you, even if an error is raised.</li>
+              <li>Mode picks the intent: <code>"r"</code> read (default), <code>"w"</code> overwrite, <code>"a"</code> append.</li>
+              <li><code>.read()</code> gives the whole file; looping gives it line by line, which scales to large files.</li>
+              <li>A text file is only characters. Any structure is on you to parse, which is why the next slide reaches for JSON.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. JSON -->
+    <section>
+      <h2><span class="eyebrow">Files &middot; 2 of 2</span>JSON: structure that survives the round trip</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="code-lg">
+            <pre><code data-trim class="language-python">import json
+
+with open("data.json", "w") as f:
+    json.dump({"classes": 45}, f)
+
+with open("data.json") as f:
+    data = json.load(f)     # back to a real dict
+print(data["classes"])      # 45  (an int, not "45")</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li>When the data has structure (nested keys, lists, numbers), save it as JSON instead of hand-formatted text.</li>
+              <li>A JSON object maps directly onto a Python <strong>dict</strong>: <code>json.dump</code> writes it, <code>json.load</code> reads it back with types intact.</li>
+              <li>JSON is the standard text format for structured data, and what almost every API speaks.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Wrap -->
+    <section>
+      <h2><span class="eyebrow">Wrap up</span>Your turn, and what is next</h2>
+      <div class="body">
+        <div class="cols cols-2">
+          <div class="card">
+            <div class="col-label">Micro-assignment</div>
+            <ul>
+              <li>Five problems on classes, errors, and JSON.</li>
+              <li>Includes a savings subclass (inheritance and polymorphism) and a missing-file fallback.</li>
+              <li>Details in the micro-assignment folder.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="col-label">Next: class 1.4, The data stack</div>
+            <ul>
+              <li><strong>NumPy</strong>: fast arrays and vectors.</li>
+              <li><strong>Pandas</strong>: tables you drive with code.</li>
+              <li>The idea that all AI data is arrays of numbers.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+      primaryColor: '#ffffff', primaryTextColor: '#172033', primaryBorderColor: '#2563eb',
+      lineColor: '#2563eb', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', fontSize: '16px' },
+    flowchart: { nodeSpacing: 45, rankSpacing: 50, htmlLabels: true } });
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', width: 1280, height: 720,
+    margin: 0, center: false, transition: 'slide', plugins: [ RevealHighlight, RevealNotes ]
+  }).then(function () {
+    if (window.mermaid) { mermaid.run(); }
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, { delimiters: [
+        { left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false } ], throwOnError: false });
+    }
+  });
+</script>
+</body>
+</html>
